@@ -274,23 +274,25 @@ function updateHighlight() {
         '(\\/\/.*|\\/\\*[\\s\\S]*?\\*\\/)|' + 
         '("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\'|`(?:[^\\\\`]|\\\\.)*`)|' + 
         '(\\b\\d+(?:\\.\\d+)?\\b)|' + 
+        '(:[a-zA-Z0-9_$À-ÿ]+)|' +
         '([^a-zA-Z0-9_À-ÿ]|^)(' + keywords.join('|') + ')(?![a-zA-Z0-9_À-ÿ])|' + 
         '([^a-zA-Z0-9_À-ÿ]|^)(' + commands.join('|') + ')(?![a-zA-Z0-9_À-ÿ])|' + 
         '([\\+\\-\\*/\\(\\),\\;\\[\\]\\{\\}\\.])|' + 
         '([a-zA-Z_$À-ÿ][a-zA-Z0-9_$À-ÿ]*)', 
-        'g'
+        'gi'
     );
 
     let highlighted = '';
     let lastIndex = 0;
     
-    code.replace(combinedRegex, (match, comment, string, number, k_pre, keyword, c_pre, command, operator, unknown, offset) => {
+    code.replace(combinedRegex, (match, comment, string, number, variable, k_pre, keyword, c_pre, command, operator, unknown, offset) => {
         highlighted += code.substring(lastIndex, offset)
             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
         if (comment) highlighted += `<span class="hl-comment">${comment.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
         else if (string) highlighted += `<span class="hl-string">${string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
         else if (number) highlighted += `<span class="hl-number">${number}</span>`;
+        else if (variable) highlighted += `<span class="hl-variable">${variable}</span>`;
         else if (keyword) {
             highlighted += k_pre;
             highlighted += `<span class="hl-keyword">${keyword}</span>`;

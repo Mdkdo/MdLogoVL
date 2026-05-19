@@ -20,6 +20,7 @@
     --hl-operator: #cc0000;
     --hl-unknown: #00bfff;
     --hl-userproc: #9933ff;
+    --hl-variable: #e67e22;
 }
 
 .theme-dark {
@@ -38,6 +39,7 @@
     --hl-operator: #ffffff;
     --hl-unknown: #b0bec5;
     --hl-userproc: #d19a66;
+    --hl-variable: #ff9800;
 }
 
 .theme-monokai {
@@ -56,6 +58,7 @@
     --hl-operator: #f8f8f2;
     --hl-unknown: #a6e22e;
     --hl-userproc: #e6db74;
+    --hl-variable: #fd971f;
 }
 
 .theme-solarized {
@@ -74,6 +77,7 @@
     --hl-operator: #586e75;
     --hl-unknown: #cb4b16;
     --hl-userproc: #b58900;
+    --hl-variable: #cb4b16;
 }
 
 .theme-midnight {
@@ -92,6 +96,7 @@
     --hl-operator: #ffffff;
     --hl-unknown: #bf94ff;
     --hl-userproc: #ff8000;
+    --hl-variable: #ffcc00;
 }
 
 * { box-sizing: border-box; }
@@ -252,3 +257,4 @@ button.danger { background: var(--danger-color); color: white; border: none; hei
 .hl-operator { color: var(--hl-operator); }
 .hl-unknown { color: var(--hl-unknown); }
 .hl-userproc { color: var(--hl-userproc); font-weight: bold; }
+.hl-variable { color: var(--hl-variable); font-weight: bold; }
