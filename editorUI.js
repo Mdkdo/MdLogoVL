@@ -231,9 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const lastWordMatch = text.substring(0, pos).match(/(\b[a-zA-Z0-9_$À-ÿ]+)$/);
             if (lastWordMatch) {
                 const lastWord = lastWordMatch[1];
-                const keywords = ["donne", "declare", "si", "sinon", "tantque", "REPETE", "choisis", "autres", "classe", "pour", "fin"];
-                const commands = ["av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "tampon", "dégradé", "opacité", "fluide", "joue", "afficheImage", "afficheVideo", "cercle", "polygone", "étoile", "fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "ht", "st"];
-                if (keywords.includes(lastWord.toLowerCase()) || commands.includes(lastWord.toLowerCase())) {
+                const keywords = ["donne", "declare", "si", "sinon", "tantque", "REPETE", "choisis", "autres", "classe", "pour", "fin", "case", "default"];
+                const commands = ["av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "tampon", "dégradé", "opacité", "fluide", "joue", "afficheImage", "afficheVideo", "cercle", "polygone", "étoile", "fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "ht", "st", "ps", "setwidth", "circle", "rectangle", "ellipse", "polygon", "star", "stamp", "drawimage", "opacity", "smooth", "setxy", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor"];
+
+                // Also check for user defined procedures in the current text
+                const userProcs = [];
+                const procRegex = /\bPOUR\s+([a-zA-Z0-9_$À-ÿ]+)/gi;
+                let m;
+                while ((m = procRegex.exec(text)) !== null) { userProcs.push(m[1].toLowerCase()); }
+
+                if (keywords.includes(lastWord.toLowerCase()) || commands.includes(lastWord.toLowerCase()) || userProcs.includes(lastWord.toLowerCase())) {
                     const newText = text.substring(0, pos - lastWord.length) + lastWord.toUpperCase() + text.substring(pos);
                     codeEditor.value = newText;
                     codeEditor.selectionStart = codeEditor.selectionEnd = pos;

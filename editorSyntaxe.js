@@ -18,7 +18,76 @@ function translateLogoToJS(code) {
         return -1;
     }
 
-    function translateBlocks(input) {
+    function applyLogoCore(input, userProcs) {
+        let out = input;
+
+        // Assignments & Declarations
+        // donne :x = 10, donne :x 10
+        out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s*=?\s*([^;\n\[\]]+)/gi, 'var $2 = $3;');
+        // :x = 10 (direct assignment)
+        out = out.replace(/(^|[^a-zA-Z0-9_$À-ÿ]):([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, '$1var $2 = $3;');
+        // Lone donne/declare
+        out = out.replace(/\b(donne|declare)\b/gi, 'var');
+        // Remaining :variable -> variable
+        out = out.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
+
+        // Commands without parentheses
+        const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon"];
+        const allZeroArg = [...zeroArgCmds, ...zeroArgCmds.map(c => c.toUpperCase())];
+        const oneArgCmds = ["fd", "bk", "rt", "lt", "setwidth", "ps", "circle", "e", "write", "font", "opacity", "smooth", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "av", "re", "td", "tg", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "opacité", "fluide", "joue", "playsound", "afficheImage", "showimage", "afficheVideo", "showvideo"];
+        const allOneArg = [...oneArgCmds, ...oneArgCmds.map(c => c.toUpperCase())];
+        const twoArgCmds = ["setxy", "fpos", "arc", "rectangle", "ellipse", "polygon", "polygone", "distance", "nce", "towards", "ds", "mod", "modulo", "o", "cercle"];
+        const allTwoArg = [...twoArgCmds, ...twoArgCmds.map(c => c.toUpperCase())];
+        const threeArgCmds = ["star", "étoile", "etoile"];
+        const allThreeArg = [...threeArgCmds, ...threeArgCmds.map(c => c.toUpperCase())];
+
+        const allOneArgPlusUser = [...allOneArg, ...userProcs, ...userProcs.map(p => p.toUpperCase())];
+
+        let tokens = out.split(/(\s+|[\[\]{}();,])/);
+        let newJs = "";
+        for (let i = 0; i < tokens.length; i++) {
+            let token = tokens[i];
+            if (token.trim() === "") { newJs += token; continue; }
+            let upperToken = token.toUpperCase();
+
+            if (allZeroArg.includes(upperToken)) {
+                newJs += token + "()";
+                let nextIdx = i + 1;
+                while (nextIdx < tokens.length && tokens[nextIdx].trim() === "") nextIdx++;
+                if (nextIdx < tokens.length && !";{}()[]".includes(tokens[nextIdx])) { newJs += ";"; }
+            } else if (allOneArgPlusUser.includes(upperToken)) {
+                let argIdx = i + 1;
+                while (argIdx < tokens.length && tokens[argIdx].trim() === "") argIdx++;
+                if (argIdx < tokens.length && !"[{}();,]".includes(tokens[argIdx]) && !allOneArgPlusUser.includes(tokens[argIdx].toUpperCase()) && !allZeroArg.includes(tokens[argIdx].toUpperCase())) {
+                    newJs += token + "(" + tokens[argIdx] + ");";
+                    i = argIdx;
+                } else { newJs += token; }
+            } else if (allTwoArg.includes(upperToken)) {
+                let arg1Idx = i + 1;
+                while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
+                let arg2Idx = arg1Idx + 1;
+                while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
+                if (arg2Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx])) {
+                    newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ");";
+                    i = arg2Idx;
+                } else { newJs += token; }
+            } else if (allThreeArg.includes(upperToken)) {
+                let arg1Idx = i + 1;
+                while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
+                let arg2Idx = arg1Idx + 1;
+                while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
+                let arg3Idx = arg2Idx + 1;
+                while (arg3Idx < tokens.length && tokens[arg3Idx].trim() === "") arg3Idx++;
+                if (arg3Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx]) && !"[{}();,]".includes(tokens[arg3Idx])) {
+                    newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ", " + tokens[arg3Idx] + ");";
+                    i = arg3Idx;
+                } else { newJs += token; }
+            } else { newJs += token; }
+        }
+        return newJs;
+    }
+
+    function translateBlocks(input, userProcs) {
         let output = input;
         let changed = true;
         while (changed) {
@@ -33,7 +102,7 @@ function translateLogoToJS(code) {
                 const endIdx = findBalanced(output, '[', ']', offset + match.length - 1);
                 if (endIdx !== -1) {
                     const body = output.substring(offset + match.length, endIdx);
-                    const translatedBody = translateBlocks(body);
+                    const translatedBody = translateBlocks(body, userProcs);
                     output = output.substring(0, offset) + `repeat(${p1}, () => { ${translatedBody} })` + output.substring(endIdx + 1);
                     continue;
                 }
@@ -48,7 +117,7 @@ function translateLogoToJS(code) {
                 const endIdx1 = findBalanced(output, '[', ']', offset + match.length - 1);
                 if (endIdx1 !== -1) {
                     const body1 = output.substring(offset + match.length, endIdx1);
-                    const translatedBody1 = translateBlocks(body1);
+                    const translatedBody1 = translateBlocks(body1, userProcs);
                     let remainder = output.substring(endIdx1 + 1);
                     let sinonMatch = remainder.match(/^\s*sinon\s*\[/i);
                     if (sinonMatch) {
@@ -56,7 +125,7 @@ function translateLogoToJS(code) {
                         const endIdx2 = findBalanced(output, '[', ']', startIdx2);
                         if (endIdx2 !== -1) {
                             const body2 = output.substring(startIdx2 + 1, endIdx2);
-                            const translatedBody2 = translateBlocks(body2);
+                            const translatedBody2 = translateBlocks(body2, userProcs);
                             output = output.substring(0, offset) + `if ${cond} { ${translatedBody1} } else { ${translatedBody2} }` + output.substring(endIdx2 + 1);
                             continue;
                         }
@@ -75,7 +144,7 @@ function translateLogoToJS(code) {
                 const endIdx = findBalanced(output, '[', ']', offset + match.length - 1);
                 if (endIdx !== -1) {
                     const body = output.substring(offset + match.length, endIdx);
-                    const translatedBody = translateBlocks(body);
+                    const translatedBody = translateBlocks(body, userProcs);
                     output = output.substring(0, offset) + `while ${cond} { ${translatedBody} }` + output.substring(endIdx + 1);
                     continue;
                 }
@@ -91,8 +160,6 @@ function translateLogoToJS(code) {
                 if (endIdx !== -1) {
                     let body = output.substring(offset + match.length, endIdx);
                     let translatedBody = body;
-
-                    // Inner cases replacement
                     while (true) {
                         let cMatch = /\bcase\s+([^\[\]\n]+)\[/gi.exec(translatedBody);
                         if (!cMatch) break;
@@ -100,7 +167,7 @@ function translateLogoToJS(code) {
                         let eIdx = findBalanced(translatedBody, '[', ']', moffset + cMatch[0].length - 1);
                         if (eIdx !== -1) {
                             let cbody = translatedBody.substring(moffset + cMatch[0].length, eIdx);
-                            translatedBody = translatedBody.substring(0, moffset) + `case ${cMatch[1]}: ${translateBlocks(cbody)}; break; ` + translatedBody.substring(eIdx + 1);
+                            translatedBody = translatedBody.substring(0, moffset) + `case ${cMatch[1]}: ${translateBlocks(cbody, userProcs)}; break; ` + translatedBody.substring(eIdx + 1);
                         } else break;
                     }
                     while (true) {
@@ -110,7 +177,7 @@ function translateLogoToJS(code) {
                         let eIdx = findBalanced(translatedBody, '[', ']', moffset + aMatch[0].length - 1);
                         if (eIdx !== -1) {
                             let cbody = translatedBody.substring(moffset + aMatch[0].length, eIdx);
-                            translatedBody = translatedBody.substring(0, moffset) + `default: ${translateBlocks(cbody)}; break; ` + translatedBody.substring(eIdx + 1);
+                            translatedBody = translatedBody.substring(0, moffset) + `default: ${translateBlocks(cbody, userProcs)}; break; ` + translatedBody.substring(eIdx + 1);
                         } else break;
                     }
                     output = output.substring(0, offset) + `switch ${val} { ${translatedBody} }` + output.substring(endIdx + 1);
@@ -126,113 +193,39 @@ function translateLogoToJS(code) {
                 const endIdx = findBalanced(output, '[', ']', offset + clsMatch[0].length - 1);
                 if (endIdx !== -1) {
                     const body = output.substring(offset + clsMatch[0].length, endIdx);
-                    const translatedBody = translateBlocks(body);
+                    const translatedBody = translateBlocks(body, userProcs);
                     output = output.substring(0, offset) + `class ${name} { ${translatedBody} }` + output.substring(endIdx + 1);
                     continue;
                 }
             }
-
             if (output === startOutput) changed = false;
         }
-        return output;
+        return applyLogoCore(output, userProcs);
     }
 
-    // 1. Procedure definitions: pour name :p1 :p2 ... fin
     const userProcs = [];
+    // Pre-identify user procedures for transpiler
+    let procSearch = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
+    let m;
+    const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)/gi;
+    while ((m = procRegex.exec(procSearch)) !== null) { userProcs.push(m[1]); }
+
+    // 1. Procedure definitions
     js = js.replace(/\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([\s\S]*?)\bfin\b/gi, (match, name, content) => {
-        userProcs.push(name);
         let firstNewLine = content.indexOf('\n');
         let paramPart = firstNewLine === -1 ? content : content.substring(0, firstNewLine);
         let body = firstNewLine === -1 ? "" : content.substring(firstNewLine);
         let params = paramPart.trim().split(/\s+/).filter(p => p.startsWith(':')).map(p => p.substring(1));
-        body = body.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
-        body = translateBlocks(body);
+        params.forEach(p => {
+            const pRegex = new RegExp(':' + p + '\\b', 'g');
+            body = body.replace(pRegex, p);
+        });
+        body = translateBlocks(body, userProcs);
         return `function ${name}(${params.join(', ')}) {\n${body}\n}`;
     });
 
-    // 2. Variable declarations: donne :x 10 -> var x = 10;
-    js = js.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s+([^;\n\[\]]+)/gi, 'var $2 = $3;');
-    js = js.replace(/\b(donne|declare)\b/gi, 'var');
-
-    // 3. Blocks outside procedures
-    js = translateBlocks(js);
-
-    // 4. Remaining :variable -> variable
-    js = js.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
-
-    // 5. Commands without parentheses
-    const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon"];
-    const allZeroArg = [...zeroArgCmds, ...zeroArgCmds.map(c => c.toUpperCase())];
-
-    const oneArgCmds = [
-        "fd", "bk", "rt", "lt", "setwidth", "ps", "circle", "e", "write", "font", "opacity", "smooth",
-        "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor",
-        "av", "re", "td", "tg", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "opacité", "fluide", "joue", "playsound", "afficheImage", "showimage", "afficheVideo", "showvideo"
-    ];
-    const allOneArg = [...oneArgCmds, ...oneArgCmds.map(c => c.toUpperCase())];
-
-    const twoArgCmds = ["setxy", "fpos", "arc", "rectangle", "ellipse", "polygon", "polygone", "distance", "nce", "towards", "ds", "mod", "modulo", "o", "cercle"];
-    const allTwoArg = [...twoArgCmds, ...twoArgCmds.map(c => c.toUpperCase())];
-
-    const threeArgCmds = ["star", "étoile", "etoile"];
-    const allThreeArg = [...threeArgCmds, ...threeArgCmds.map(c => c.toUpperCase())];
-
-    const allOneArgPlusUser = [...allOneArg, ...userProcs, ...userProcs.map(p => p.toUpperCase())];
-
-    let tokens = js.split(/(\s+|[\[\]{}();,])/);
-    let newJs = "";
-    for (let i = 0; i < tokens.length; i++) {
-        let token = tokens[i];
-        if (token.trim() === "") { newJs += token; continue; }
-        let upperToken = token.toUpperCase();
-
-        if (allZeroArg.includes(upperToken)) {
-            newJs += token + "()";
-            let nextIdx = i + 1;
-            while (nextIdx < tokens.length && tokens[nextIdx].trim() === "") nextIdx++;
-            if (nextIdx < tokens.length && !";{}()[]".includes(tokens[nextIdx])) {
-                newJs += ";";
-            }
-        } else if (allOneArgPlusUser.includes(upperToken)) {
-            let argIdx = i + 1;
-            while (argIdx < tokens.length && tokens[argIdx].trim() === "") argIdx++;
-            if (argIdx < tokens.length && !"[{}();,]".includes(tokens[argIdx]) && !allOneArgPlusUser.includes(tokens[argIdx].toUpperCase()) && !allZeroArg.includes(tokens[argIdx].toUpperCase())) {
-                newJs += token + "(" + tokens[argIdx] + ");";
-                i = argIdx;
-            } else {
-                newJs += token;
-            }
-        } else if (allTwoArg.includes(upperToken)) {
-            let arg1Idx = i + 1;
-            while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
-            let arg2Idx = arg1Idx + 1;
-            while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
-
-            if (arg2Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx])) {
-                newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ");";
-                i = arg2Idx;
-            } else {
-                newJs += token;
-            }
-        } else if (allThreeArg.includes(upperToken)) {
-            let arg1Idx = i + 1;
-            while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
-            let arg2Idx = arg1Idx + 1;
-            while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
-            let arg3Idx = arg2Idx + 1;
-            while (arg3Idx < tokens.length && tokens[arg3Idx].trim() === "") arg3Idx++;
-
-            if (arg3Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx]) && !"[{}();,]".includes(tokens[arg3Idx])) {
-                newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ", " + tokens[arg3Idx] + ");";
-                i = arg3Idx;
-            } else {
-                newJs += token;
-            }
-        } else {
-            newJs += token;
-        }
-    }
-    js = newJs;
+    // 2. Blocks outside procedures
+    js = translateBlocks(js, userProcs);
 
     // Restore placeholders
     for (let i = placeholders.length - 1; i >= 0; i--) {
@@ -381,6 +374,27 @@ function executeSnippet(code) {
         const execute = new Function(...keys, `"use strict";\n${preparedCode}`);
         execute(...values);
     } catch (err) {
-        logToTerminal(err.message, 'error');
+        let lineNo = "Inconnue";
+        if (err.stack) {
+            const stackLines = err.stack.split('\n');
+            for (let sLine of stackLines) {
+                // Different browsers/environments have different formats
+                const m = sLine.match(/<anonymous>:(\d+):(\d+)/) || sLine.match(/eval at.*<anonymous>:(\d+):(\d+)/) || sLine.match(/eval:(\d+):(\d+)/);
+                if (m) {
+                    lineNo = parseInt(m[m.length - 2]) - 2; // Adjust for Function wrapper
+                    if (lineNo < 0) lineNo = "Inconnue";
+                    break;
+                }
+            }
+        }
+
+        const logoLines = code.split('\n');
+        let errorMsg = `Erreur: ${err.message}\n`;
+        if (lineNo !== "Inconnue" && logoLines[lineNo - 1] !== undefined) {
+            errorMsg += `Ligne ${lineNo}: ${logoLines[lineNo - 1].trim()}`;
+        } else {
+            errorMsg += `Ligne: ${lineNo}`;
+        }
+        logToTerminal(errorMsg, 'error');
     }
 }
