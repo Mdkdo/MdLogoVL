@@ -22,17 +22,18 @@ function translateLogoToJS(code) {
         let out = input;
 
         // Assignments & Declarations
-        // Case 1: donne :x = 10 (explicit assignment)
         out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, 'var $2 = $3;');
-        // Case 2: donne :x 10 (Logo style) - only take next token as value
         out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s+([^;\n\s\[\]{}()]+)/gi, 'var $2 = $3;');
-        // Case 2b: donne :x (:i + 1) (Logo style with parenthesis)
         out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s+(\([^;\n\[\]{}]+\))/gi, 'var $2 = $3;');
-        // Case 3: :x = 10 (direct assignment) - careful not to match inside if ( :x == 10 )
         out = out.replace(/(^|[\n;])\s*:([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, '$1var $2 = $3;');
 
         out = out.replace(/\b(donne|declare)\b/gi, 'var');
         out = out.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
+
+        // Keywords
+        out = out.replace(/\bRENDS\b/gi, 'return');
+        out = out.replace(/\bSTOP\b/gi, 'break');
+        out = out.replace(/\bCONTINUE\b/gi, 'continue');
 
         // Commands without parentheses
         const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon"];
@@ -52,6 +53,7 @@ function translateLogoToJS(code) {
 
         let tokens = out.split(/(\s+|[\[\]{}();,])/);
         let newJs = "";
+        let loopVarCounter = 0;
         for (let i = 0; i < tokens.length; i++) {
             let token = tokens[i];
             if (token.trim() === "") { newJs += token; continue; }
@@ -88,20 +90,22 @@ function translateLogoToJS(code) {
     function translateBlocks(input, userProcs) {
         let output = input;
         let changed = true;
+        let loopCounter = 0;
         while (changed) {
             let startOutput = output;
 
-            // REPETE n [ body ]
+            // REPETE n [ body ] -> native for loop to support STOP/CONTINUE
             let repMatch = /\bREPETE\s+(\d+|[a-zA-Z0-9_$À-ÿ]+|(?:\([^()]+\)))\s*\[/gi.exec(output);
             if (repMatch) {
                 const match = repMatch[0];
-                const p1 = repMatch[1];
+                const n = repMatch[1];
                 const offset = repMatch.index;
                 const endIdx = findBalanced(output, '[', ']', offset + match.length - 1);
                 if (endIdx !== -1) {
                     const body = output.substring(offset + match.length, endIdx);
                     const translatedBody = translateBlocks(body, userProcs);
-                    output = output.substring(0, offset) + `repeat(${p1}, () => { ${translatedBody} })` + output.substring(endIdx + 1);
+                    const loopVar = `_i${loopCounter++}`;
+                    output = output.substring(0, offset) + `for(let ${loopVar}=0; ${loopVar}<${n}; ${loopVar}++){ ${translatedBody} }` + output.substring(endIdx + 1);
                     continue;
                 }
             }
@@ -243,7 +247,7 @@ function updateHighlight() {
     
     let code = codeEditor.value;
 
-    const keywords = ["const", "let", "var", "if", "else", "for", "while", "function", "return", "new", "try", "catch", "class", "switch", "case", "default", "donne", "declare", "si", "sinon", "tantque", "REPETE", "choisis", "autres", "classe", "pour", "fin"];
+    const keywords = ["const", "let", "var", "if", "else", "for", "while", "function", "return", "new", "try", "catch", "class", "switch", "case", "default", "donne", "declare", "si", "sinon", "tantque", "repete", "choisis", "autres", "classe", "pour", "fin", "stop", "continue", "rends"];
     const commands = [
         "fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "setcolor", "setwidth", "ps",
         "arc", "circle", "e", "rectangle", "ellipse", "line", "write", "font",
@@ -296,7 +300,20 @@ function updateHighlight() {
             highlighted += `<span class="hl-command">${command}</span>`;
         }
         else if (operator) highlighted += `<span class="hl-operator">${operator.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
-        else if (unknown) highlighted += `<span class="hl-unknown">${unknown}</span>`;
+        else if (unknown) {
+            // Check if unknown is a user proc
+            const procSearch = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
+            const userProcs = [];
+            const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)/gi;
+            let m;
+            while ((m = procRegex.exec(procSearch)) !== null) { userProcs.push(m[1].toUpperCase()); }
+
+            if (userProcs.includes(unknown.toUpperCase())) {
+                highlighted += `<span class="hl-userproc">${unknown}</span>`;
+            } else {
+                highlighted += `<span class="hl-unknown">${unknown}</span>`;
+            }
+        }
         
         lastIndex = offset + match.length;
         return match;
@@ -361,6 +378,8 @@ function getHelpers() {
 }
 
 function runCode() {
+    const terminal = document.getElementById('terminalOutput');
+    if (terminal) terminal.innerHTML = '';
     const code = document.getElementById('codeEditor').value;
     turtle.reset();
     executeSnippet(code);
