@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo JS Interpreter</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body class="theme-light">
+    <div id="app" class="mode-editor">
+        <!-- Editor View -->
+        <div id="editor-view" class="view">
+            <header class="main-header">
+                <h1>Logo JS</h1>
+                <div class="header-actions">
+                    <select id="themeSelect">
+                        <option value="theme-light">Clair</option>
+                        <option value="theme-dark">Sombre</option>
+                        <option value="theme-monokai">Monokai</option>
+                        <option value="theme-solarized">Solarized</option>
+                        <option value="theme-midnight">Midnight</option>
+                    </select>
+                    <button id="runBtnTop" class="primary"><i class="fas fa-play"></i> Exécuter</button>
+                    <button id="settingsBtn" title="Paramètres"><i class="fas fa-cog"></i></button>
+                    <a href="help.html" target="_blank" class="help-link"><i class="fas fa-question-circle"></i> Aide</a>
+                </div>
+            </header>
+
+            <div id="settings-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Paramètres</h2>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="setting-item">
+                            <label for="bg-color-picker">Couleur du Canevas :</label>
+                            <input type="color" id="bg-color-picker" value="#ffffff">
+                        </div>
+                        <div class="setting-item">
+                            <label for="turtle-img-select">Image de la Tortue :</label>
+                            <select id="turtle-img-select">
+                                <option value="default">Classique (Triangle)</option>
+                                <option value="https://upload.wikimedia.org/wikipedia/commons/4/4c/Turtle-animation.gif">Tortue Réelle</option>
+                                <option value="https://cdn-icons-png.flaticon.com/512/1042/1042308.png">Vaisseau Spatial</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="editor-workspace">
+                <div class="toolbar-container">
+                    <div class="toolbar">
+                        <button id="newFileBtn" title="Nouveau"><i class="fas fa-file"></i></button>
+                        <button id="openFileBtn" title="Ouvrir"><i class="fas fa-folder-open"></i></button>
+                        <button id="saveFileBtn" title="Enregistrer"><i class="fas fa-save"></i></button>
+                        <span class="separator"></span>
+                        <button id="undoBtn" title="Annuler"><i class="fas fa-undo"></i></button>
+                        <button id="redoBtn" title="Rétablir"><i class="fas fa-redo"></i></button>
+                        <span class="separator"></span>
+                        <button id="selectAllBtn" title="Tout sélectionner"><i class="fas fa-mouse-pointer"></i></button>
+                        <button id="copyBtn" title="Copier"><i class="fas fa-copy"></i></button>
+                        <button id="cutBtn" title="Couper"><i class="fas fa-cut"></i></button>
+                        <button id="pasteBtn" title="Coller"><i class="fas fa-paste"></i></button>
+                        <span class="separator"></span>
+                        <button id="commentBtn" title="Commenter"><i class="fas fa-comment-slash"></i></button>
+                        <button id="indentBtn" title="Indenter"><i class="fas fa-indent"></i></button>
+                        <button id="unindentBtn" title="Désindenter"><i class="fas fa-outdent"></i></button>
+                    </div>
+                </div>
+                
+                <div id="editor-container">
+                    <textarea id="codeEditor" spellcheck="false">repeat(36, () => {
+  repeat(4, () => {
+    fd(100);
+    rt(90);
+  });
+  rt(10);
+});</textarea>
+                    <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+                </div>
+            </div>
+
+            <div class="examples-bar">
+                <h3>Exemples :</h3>
+                <button class="example-btn" data-code="for(let i=0; i<100; i++) { av(i*2); td(91); }">Spirale</button>
+                <button class="example-btn" data-code="fcc('rouge'); polygone(6, 50);">Hexagone</button>
+                <button class="example-btn" data-code="étoile(5, 100, 40);">Étoile</button>
+            </div>
+        </div>
+
+        <!-- Execution View -->
+        <div id="execution-view" class="view">
+            <div class="exec-toolbar">
+                <div class="toolbar-row">
+                    <button id="backToEditorBtn" class="exec-btn"><i class="fas fa-edit"></i> Editeur</button>
+                    <button id="stopBtn" class="exec-btn danger"><i class="fas fa-stop"></i> Arrêter</button>
+                    
+                    <div class="status-bar">
+                        <div class="status-item" title="Position de la Souris">
+                            <i class="fas fa-mouse-pointer"></i> <span id="mouse-pos">0, 0</span>
+                        </div>
+                        <div class="status-item" title="Position de la Tortue">
+                            <i class="fas fa-location-arrow"></i> <span id="turtle-pos">0, 0</span>
+                        </div>
+                        <div class="status-item" title="Angle de la Tortue">
+                            <i class="fas fa-compass"></i> <span id="turtle-angle">0°</span>
+                        </div>
+                        <div class="status-item" title="Épaisseur du trait">
+                            <i class="fas fa-pen-nib"></i> <span id="pen-size">1</span>
+                        </div>
+                        <div class="status-item" title="Couleur du trait">
+                            <span class="color-preview" id="pen-color-preview"></span> <span id="pen-color">#000000</span>
+                        </div>
+                        <div class="status-item" title="Couleur de remplissage">
+                            <span class="color-preview" id="fill-color-preview"></span> <span id="fill-color-status">#000000</span>
+                        </div>
+                        <div class="status-item" title="Couleur du fond">
+                            <span class="color-preview" id="bg-color-preview-status"></span> <span id="bg-color-status">#ffffff</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-row">
+                    <div class="inline-cmd-container">
+                        <input type="text" id="inlineCmdInput" placeholder="Saisir une commande Logo...">
+                        <button id="runInlineBtn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="turtleCanvas" width="800" height="600"></canvas>
+                <canvas id="turtleLayer" width="800" height="600"></canvas>
+            </div>
+
+            <div id="terminal-section">
+                <div class="terminal-header">
+                    <span>Terminal</span>
+                    <div class="terminal-actions">
+                        <button id="clearTerminalBtn" title="Effacer"><i class="fas fa-trash-alt"></i></button>
+                        <button id="toggleTerminalBtn" title="Masquer"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                </div>
+                <div id="terminalOutput"></div>
+            </div>
+            
+            <button id="showTerminalBtn" class="hidden"><i class="fas fa-terminal"></i> Terminal</button>
+        </div>
+    </div>
+
+    <script src="syntaxe.js"></script>
+    <script src="canva.js"></script>
+    <script src="library.js"></script>
+    <script src="editorSyntaxe.js"></script>
+    <script src="editorUI.js"></script>
+</body>
+</html>

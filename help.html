@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Logo JS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f7f6;
+            --text: #333;
+            --code-bg: #eef2f3;
+            --border: #ddd;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Body doesn't scroll, layout does */
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .sidebar a { color: #bdc3c7; text-decoration: none; font-size: 0.9rem; padding: 5px 0; transition: 0.2s; }
+        .sidebar a:hover { color: white; padding-left: 5px; }
+        .back-btn { background: var(--accent); color: white !important; padding: 10px !important; border-radius: 4px; text-align: center; margin-top: auto; }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto; /* Fix scrolling here */
+            scroll-behavior: smooth;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        h1 { color: var(--primary); border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
+        h2 { color: var(--accent); margin-top: 40px; }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        th { background: var(--code-bg); color: var(--primary); font-size: 0.85rem; text-transform: uppercase; }
+        
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            color: #c7254e;
+            font-size: 0.9rem;
+        }
+        
+        .example {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 5px;
+            font-family: monospace;
+            white-space: pre;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            background: var(--accent);
+            color: white;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <a href="#mouvement"><i class="fas fa-arrows-alt"></i> Mouvement</a>
+        <a href="#stylo"><i class="fas fa-pen"></i> Stylo & Couleurs</a>
+        <a href="#formes"><i class="fas fa-shapes"></i> Formes</a>
+        <a href="#media"><i class="fas fa-photo-video"></i> Média & Image</a>
+        <a href="#math"><i class="fas fa-calculator"></i> Mathématiques</a>
+        <a href="#structures"><i class="fas fa-code"></i> Structures de contrôle</a>
+        <a href="#js-base"><i class="fas fa-js-square"></i> Fondamentaux JS</a>
+        <a href="#avance"><i class="fas fa-cogs"></i> Avancé</a>
+        <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Retour au code</a>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <h1>Documentation Logo JS</h1>
+            <p>Bienvenue dans l'aide de l'interpréteur Logo JS. Toutes les fonctions suivent la syntaxe JavaScript standard.</p>
+
+            <section id="mouvement">
+                <h2><i class="fas fa-arrows-alt"></i> Mouvement</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th><th>Alias FR</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>fd(n)</code></td><td>Avance de n pas.</td><td><code>av(n)</code></td></tr>
+                            <tr><td><code>bk(n)</code></td><td>Recule de n pas.</td><td><code>re(n)</code></td></tr>
+                            <tr><td><code>rt(deg)</code></td><td>Tourne à droite.</td><td><code>td(deg)</code></td></tr>
+                            <tr><td><code>lt(deg)</code></td><td>Tourne à gauche.</td><td><code>tg(deg)</code></td></tr>
+                            <tr><td><code>setxy(x, y)</code></td><td>Déplace la tortue.</td><td><code>fpos(x, y)</code></td></tr>
+                            <tr><td><code>setheading(deg)</code></td><td>Oriente la tortue.</td><td><code>fcap(deg)</code></td></tr>
+                            <tr><td><code>home()</code></td><td>Ramène la tortue au centre.</td><td></td></tr>
+                            <tr><td><code>cs()</code></td><td>Efface tout.</td><td><code>ve()</code></td></tr>
+                            <tr><td><code>clean()</code></td><td>Efface le dessin.</td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="stylo">
+                <h2><i class="fas fa-pen"></i> Stylo & Couleurs</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th><th>Alias FR</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>pu()</code></td><td>Lève le stylo.</td><td><code>lc()</code></td></tr>
+                            <tr><td><code>pd()</code></td><td>Abaisse le stylo.</td><td><code>bc()</code></td></tr>
+                            <tr><td><code>setcolor(c)</code></td><td>Couleur du stylo.</td><td><code>fcc(c)</code></td></tr>
+                            <tr><td><code>setwidth(n)</code></td><td>Épaisseur du stylo.</td><td><code>fixetaille(n)</code></td></tr>
+                            <tr><td><code>fillcolor(c)</code></td><td>Couleur remplissage.</td><td><code>fcl(c)</code></td></tr>
+                            <tr><td><code>fill()</code></td><td>Remplit la forme.</td><td></td></tr>
+                            <tr><td><code>canvascolor(c)</code></td><td>Couleur du canevas.</td><td><code>fct(c)</code></td></tr>
+                            <tr><td><code>opacity(n)</code></td><td>Opacité globale.</td><td><code>opacité(n)</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="formes">
+                <h2><i class="fas fa-shapes"></i> Formes Géométriques</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th><th>Alias FR</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>circle(r)</code></td><td>Trace un cercle.</td><td><code>cercle(r)</code></td></tr>
+                            <tr><td><code>arc(deg, r)</code></td><td>Trace un arc.</td><td></td></tr>
+                            <tr><td><code>rectangle(w, h)</code></td><td>Trace un rectangle.</td><td></td></tr>
+                            <tr><td><code>ellipse(w, h)</code></td><td>Trace une ellipse.</td><td></td></tr>
+                            <tr><td><code>polygon(c, t)</code></td><td>Trace un polygone.</td><td><code>polygone(c, t)</code></td></tr>
+                            <tr><td><code>star(p, r1, r2)</code></td><td>Trace une étoile.</td><td><code>étoile(p, r1, r2)</code></td></tr>
+                            <tr><td><code>line(x1, y1, x2, y2)</code></td><td>Trace une ligne.</td><td></td></tr>
+                            <tr><td><code>stamp()</code></td><td>Empreinte tortue.</td><td><code>tampon()</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="media">
+                <h2><i class="fas fa-photo-video"></i> Média & Image</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>drawimage(url, w, h)</code></td><td>Dessine une image à la position de la tortue.</td></tr>
+                            <tr><td><code>showimage(url, x, y, w, h)</code></td><td>Affiche une image fixe sur le canevas.</td></tr>
+                            <tr><td><code>showvideo(url, x, y, w, h)</code></td><td>Affiche une vidéo sur le canevas.</td></tr>
+                            <tr><td><code>playsound(url)</code></td><td>Joue un fichier audio.</td></tr>
+                            <tr><td><code>write("texte")</code></td><td>Écrit du texte à la position de la tortue.</td></tr>
+                            <tr><td><code>font("style")</code></td><td>Change la police (ex: "bold 20px Arial").</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="math">
+                <h2><i class="fas fa-calculator"></i> Mathématiques</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>sin(deg)</code>, <code>cos(deg)</code></td><td>Fonctions trigo (en degrés).</td></tr>
+                            <tr><td><code>tan(deg)</code>, <code>atan(y, x)</code></td><td>Fonctions trigo (en degrés).</td></tr>
+                            <tr><td><code>random(n)</code></td><td>Nombre aléatoire entre 0 et n. Alias: <code>m</code></td></tr>
+                            <tr><td><code>integer(n)</code></td><td>Partie entière. Alias: <code>round</code>, <code>ceil</code></td></tr>
+                            <tr><td><code>mod(a, b)</code></td><td>Reste de la division. Alias: <code>modulo</code>, <code>o</code></td></tr>
+                            <tr><td><code>sqrt(n)</code>, <code>pow(a, b)</code></td><td>Racine carrée et puissance.</td></tr>
+                            <tr><td><code>posx()</code>, <code>posy()</code></td><td>Position actuelle.</td></tr>
+                            <tr><td><code>heading()</code></td><td>Angle actuel (0-360). Alias: <code>ng</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="structures">
+                <h2><i class="fas fa-code"></i> Structures de contrôle</h2>
+                <div class="card">
+                    <h3>Si... Sinon (if... else)</h3>
+                    <div class="example">if (posx() > 100) {
+    setcolor('red');
+} else {
+    setcolor('blue');
+}</div>
+
+                    <h3>Switch</h3>
+                    <div class="example">let forme = 'carré';
+switch(forme) {
+    case 'carré': 
+        polygon(4, 50); break;
+    case 'triangle': 
+        polygon(3, 50); break;
+    default: 
+        circle(50);
+}</div>
+                    
+                    <h3>Boucles (for, while)</h3>
+                    <p>Utilisez <code>break</code> pour sortir d'une boucle et <code>continue</code> pour passer à l'itération suivante.</p>
+                    <div class="example">// Boucle for
+for (let i = 0; i < 10; i++) {
+    if (i === 5) continue; // Saute l'étape 5
+    fd(i * 10);
+    rt(90);
+}
+
+// Boucle while
+let d = 0;
+while (d < 100) {
+    fd(d);
+    rt(45);
+    d += 10;
+    if (d > 80) break; // Arrête la boucle
+}</div>
+                </div>
+            </section>
+
+            <section id="js-base">
+                <h2><i class="fas fa-js-square"></i> Fondamentaux JS</h2>
+                <div class="card">
+                    <h3>Variables & Déclaration</h3>
+                    <div class="example">let x = 10;        // Variable modifiable
+const PI = 3.14;    // Constante
+var y = 20;         // Ancienne méthode (déconseillé)</div>
+
+                    <h3>Conversions</h3>
+                    <div class="example">let n = Number("123");     // Vers nombre
+let s = String(123);     // Vers texte
+let i = parseInt("10.5"); // Vers entier</div>
+
+                    <h3>Tableaux (Arrays)</h3>
+                    <div class="example">let couleurs = ['red', 'green', 'blue'];
+couleurs.push('yellow'); // Ajoute
+setcolor(couleurs[0]);   // Accède au 1er élément</div>
+
+                    <h3>Dictionnaires / Objets</h3>
+                    <div class="example">let config = { taille: 50, couleur: 'red' };
+setwidth(config.taille);
+setcolor(config['couleur']);</div>
+
+                    <h3>Classes</h3>
+                    <div class="example">class Forme {
+    constructor(t) { this.t = t; }
+    dessine() { fd(this.t); rt(90); }
+}
+let f = new Forme(100);
+f.dessine();</div>
+                </div>
+            </section>
+
+            <section id="avance">
+                <h2><i class="fas fa-cogs"></i> Avancé</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Commande</th><th>Description</th><th>Alias FR</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>smooth(bool)</code></td><td>Animation fluide.</td><td><code>fluide(bool)</code></td></tr>
+                            <tr><td><code>gradient(t, ...)</code></td><td>Dégradé.</td><td><code>dégradé(t, ...)</code></td></tr>
+                            <tr><td><code>repeat(n, fn)</code></td><td>Boucle simplifiée.</td><td><code>répète(n, fn)</code></td></tr>
+                            <tr><td><code>console.log(...)</code></td><td>Terminal.</td><td><code>print</code></td></tr>
+                        </tbody>
+                    </table>
+                    <p>Exemple de boucle complexe :</p>
+                    <div class="example">répète(36, (i) => {
+  fcc(rgb(i*7, 100, 255));
+  polygone(6, 50);
+  td(10);
+});</div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
