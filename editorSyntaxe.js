@@ -240,11 +240,25 @@ function translateLogoToJS(code) {
     return js;
 }
 
+function updateLineNumbers() {
+    const codeEditor = document.getElementById('codeEditor');
+    const lineNumbers = document.getElementById('line-numbers');
+    if (!codeEditor || !lineNumbers) return;
+
+    const lines = codeEditor.value.split('\n');
+    let numbers = '';
+    for (let i = 1; i <= lines.length; i++) {
+        numbers += i + '<br>';
+    }
+    lineNumbers.innerHTML = numbers;
+}
+
 function updateHighlight() {
     const codeEditor = document.getElementById('codeEditor');
     const highlighting = document.getElementById('highlighting-content');
     if (!codeEditor || !highlighting) return;
     
+    updateLineNumbers();
     let code = codeEditor.value;
 
     const keywords = ["const", "let", "var", "if", "else", "for", "while", "function", "return", "new", "try", "catch", "class", "switch", "case", "default", "donne", "declare", "si", "sinon", "tantque", "repete", "choisis", "autres", "classe", "pour", "fin", "stop", "continue", "rends"];
@@ -328,9 +342,13 @@ function updateHighlight() {
 function syncScroll() {
     const codeEditor = document.getElementById('codeEditor');
     const highlighting = document.getElementById('highlighting');
+    const lineNumbers = document.getElementById('line-numbers');
     if (codeEditor && highlighting) {
         highlighting.scrollTop = codeEditor.scrollTop;
         highlighting.scrollLeft = codeEditor.scrollLeft;
+        if (lineNumbers) {
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        }
     }
 }
 
