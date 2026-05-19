@@ -22,26 +22,33 @@ function translateLogoToJS(code) {
         let out = input;
 
         // Assignments & Declarations
-        // donne :x = 10, donne :x 10
-        out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s*=?\s*([^;\n\[\]]+)/gi, 'var $2 = $3;');
-        // :x = 10 (direct assignment)
-        out = out.replace(/(^|[^a-zA-Z0-9_$À-ÿ]):([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, '$1var $2 = $3;');
-        // Lone donne/declare
+        // Case 1: donne :x = 10 (explicit assignment)
+        out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, 'var $2 = $3;');
+        // Case 2: donne :x 10 (Logo style) - only take next token as value
+        out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s+([^;\n\s\[\]{}()]+)/gi, 'var $2 = $3;');
+        // Case 2b: donne :x (:i + 1) (Logo style with parenthesis)
+        out = out.replace(/\b(donne|declare)\s+:([a-zA-Z0-9_$À-ÿ]+)\s+(\([^;\n\[\]{}]+\))/gi, 'var $2 = $3;');
+        // Case 3: :x = 10 (direct assignment) - careful not to match inside if ( :x == 10 )
+        out = out.replace(/(^|[\n;])\s*:([a-zA-Z0-9_$À-ÿ]+)\s*=\s*([^;\n\[\]]+)/gi, '$1var $2 = $3;');
+
         out = out.replace(/\b(donne|declare)\b/gi, 'var');
-        // Remaining :variable -> variable
         out = out.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
 
         // Commands without parentheses
         const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon"];
-        const allZeroArg = [...zeroArgCmds, ...zeroArgCmds.map(c => c.toUpperCase())];
         const oneArgCmds = ["fd", "bk", "rt", "lt", "setwidth", "ps", "circle", "e", "write", "font", "opacity", "smooth", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "av", "re", "td", "tg", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "opacité", "fluide", "joue", "playsound", "afficheImage", "showimage", "afficheVideo", "showvideo"];
-        const allOneArg = [...oneArgCmds, ...oneArgCmds.map(c => c.toUpperCase())];
         const twoArgCmds = ["setxy", "fpos", "arc", "rectangle", "ellipse", "polygon", "polygone", "distance", "nce", "towards", "ds", "mod", "modulo", "o", "cercle"];
-        const allTwoArg = [...twoArgCmds, ...twoArgCmds.map(c => c.toUpperCase())];
         const threeArgCmds = ["star", "étoile", "etoile"];
-        const allThreeArg = [...threeArgCmds, ...threeArgCmds.map(c => c.toUpperCase())];
 
-        const allOneArgPlusUser = [...allOneArg, ...userProcs, ...userProcs.map(p => p.toUpperCase())];
+        const arityMap = {};
+        zeroArgCmds.forEach(c => arityMap[c.toUpperCase()] = 0);
+        oneArgCmds.forEach(c => arityMap[c.toUpperCase()] = 1);
+        twoArgCmds.forEach(c => arityMap[c.toUpperCase()] = 2);
+        threeArgCmds.forEach(c => arityMap[c.toUpperCase()] = 3);
+
+        for (let name in userProcs) {
+            arityMap[name.toUpperCase()] = userProcs[name];
+        }
 
         let tokens = out.split(/(\s+|[\[\]{}();,])/);
         let newJs = "";
@@ -50,39 +57,30 @@ function translateLogoToJS(code) {
             if (token.trim() === "") { newJs += token; continue; }
             let upperToken = token.toUpperCase();
 
-            if (allZeroArg.includes(upperToken)) {
-                newJs += token + "()";
-                let nextIdx = i + 1;
-                while (nextIdx < tokens.length && tokens[nextIdx].trim() === "") nextIdx++;
-                if (nextIdx < tokens.length && !";{}()[]".includes(tokens[nextIdx])) { newJs += ";"; }
-            } else if (allOneArgPlusUser.includes(upperToken)) {
-                let argIdx = i + 1;
-                while (argIdx < tokens.length && tokens[argIdx].trim() === "") argIdx++;
-                if (argIdx < tokens.length && !"[{}();,]".includes(tokens[argIdx]) && !allOneArgPlusUser.includes(tokens[argIdx].toUpperCase()) && !allZeroArg.includes(tokens[argIdx].toUpperCase())) {
-                    newJs += token + "(" + tokens[argIdx] + ");";
-                    i = argIdx;
-                } else { newJs += token; }
-            } else if (allTwoArg.includes(upperToken)) {
-                let arg1Idx = i + 1;
-                while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
-                let arg2Idx = arg1Idx + 1;
-                while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
-                if (arg2Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx])) {
-                    newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ");";
-                    i = arg2Idx;
-                } else { newJs += token; }
-            } else if (allThreeArg.includes(upperToken)) {
-                let arg1Idx = i + 1;
-                while (arg1Idx < tokens.length && tokens[arg1Idx].trim() === "") arg1Idx++;
-                let arg2Idx = arg1Idx + 1;
-                while (arg2Idx < tokens.length && tokens[arg2Idx].trim() === "") arg2Idx++;
-                let arg3Idx = arg2Idx + 1;
-                while (arg3Idx < tokens.length && tokens[arg3Idx].trim() === "") arg3Idx++;
-                if (arg3Idx < tokens.length && !"[{}();,]".includes(tokens[arg1Idx]) && !"[{}();,]".includes(tokens[arg2Idx]) && !"[{}();,]".includes(tokens[arg3Idx])) {
-                    newJs += token + "(" + tokens[arg1Idx] + ", " + tokens[arg2Idx] + ", " + tokens[arg3Idx] + ");";
-                    i = arg3Idx;
-                } else { newJs += token; }
-            } else { newJs += token; }
+            if (arityMap[upperToken] !== undefined) {
+                let arity = arityMap[upperToken];
+                let args = [];
+                let currentIdx = i + 1;
+                for (let a = 0; a < arity; a++) {
+                    while (currentIdx < tokens.length && tokens[currentIdx].trim() === "") currentIdx++;
+                    if (currentIdx < tokens.length && !"[{}();,]".includes(tokens[currentIdx]) && arityMap[tokens[currentIdx].toUpperCase()] === undefined) {
+                        args.push(tokens[currentIdx]);
+                        currentIdx++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (args.length === arity) {
+                    newJs += token + "(" + args.join(", ") + ");";
+                    i = currentIdx - 1;
+                } else {
+                    newJs += token;
+                    if (arity === 0 && (i + 1 >= tokens.length || tokens[i+1].trim() !== "(")) newJs += "()";
+                }
+            } else {
+                newJs += token;
+            }
         }
         return newJs;
     }
@@ -203,12 +201,16 @@ function translateLogoToJS(code) {
         return applyLogoCore(output, userProcs);
     }
 
-    const userProcs = [];
-    // Pre-identify user procedures for transpiler
+    const userProcs = {};
+    // Pre-identify user procedures and their arity
     let procSearch = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
     let m;
-    const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)/gi;
-    while ((m = procRegex.exec(procSearch)) !== null) { userProcs.push(m[1]); }
+    const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([\s\S]*?)\n/gi;
+    while ((m = procRegex.exec(procSearch)) !== null) {
+        const name = m[1];
+        const params = m[2].trim().split(/\s+/).filter(p => p.startsWith(':'));
+        userProcs[name] = params.length;
+    }
 
     // 1. Procedure definitions
     js = js.replace(/\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([\s\S]*?)\bfin\b/gi, (match, name, content) => {
@@ -378,7 +380,6 @@ function executeSnippet(code) {
         if (err.stack) {
             const stackLines = err.stack.split('\n');
             for (let sLine of stackLines) {
-                // Different browsers/environments have different formats
                 const m = sLine.match(/<anonymous>:(\d+):(\d+)/) || sLine.match(/eval at.*<anonymous>:(\d+):(\d+)/) || sLine.match(/eval:(\d+):(\d+)/);
                 if (m) {
                     lineNo = parseInt(m[m.length - 2]) - 2; // Adjust for Function wrapper
