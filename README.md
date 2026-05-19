@@ -1,4 +1,4 @@
-# Logo JS Interpreter
+# Logo VL Interpreter
 
 An advanced, web-based Logo interpreter that leverages modern JavaScript syntax while maintaining the charm of classic turtle graphics.
 
