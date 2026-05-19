@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logo JS Interpreter</title>
+    <title>Logo VL Advanced</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
@@ -12,7 +12,7 @@
         <!-- Editor View -->
         <div id="editor-view" class="view">
             <header class="main-header">
-                <h1>Logo JS</h1>
+                <h1>Logo VL Advanced</h1>
                 <div class="header-actions">
                     <select id="themeSelect">
                         <option value="theme-light">Clair</option>
@@ -72,22 +72,22 @@
                 </div>
                 
                 <div id="editor-container">
-                    <textarea id="codeEditor" spellcheck="false">repeat(36, () => {
-  repeat(4, () => {
-    fd(100);
-    rt(90);
-  });
-  rt(10);
-});</textarea>
+                    <textarea id="codeEditor" spellcheck="false">REPETE 36 [
+  REPETE 4 [
+    AV 100
+    TD 90
+  ]
+  TD 10
+]</textarea>
                     <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
                 </div>
             </div>
 
             <div class="examples-bar">
                 <h3>Exemples :</h3>
-                <button class="example-btn" data-code="for(let i=0; i<100; i++) { av(i*2); td(91); }">Spirale</button>
-                <button class="example-btn" data-code="fcc('rouge'); polygone(6, 50);">Hexagone</button>
-                <button class="example-btn" data-code="étoile(5, 100, 40);">Étoile</button>
+                <button class="example-btn" data-code="donne :i 0 tantque (:i < 100) [ AV (:i * 2) TD 91 donne :i (:i + 1) ]">Spirale</button>
+                <button class="example-btn" data-code="FCC 'rouge' POLYGONE 6 50">Hexagone</button>
+                <button class="example-btn" data-code="ETOILE 5 100 40">Étoile</button>
             </div>
         </div>
 
