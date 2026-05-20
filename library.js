@@ -66,34 +66,6 @@ var repeat = (n, fn) => {
     }
 };
 
-// French Aliases
-var av = fd;
-var re = bk;
-var td = rt;
-var tg = lt;
-var lc = pu;
-var bc = pd;
-var ve = cs;
-var ct = ht;
-var mt = st;
-var fcc = setcolor;
-var fcl = fillcolor;
-var fcap = setheading;
-var fpos = setxy;
-var fct = canvascolor;
-var répète = repeat;
-var écris = write;
-var tampon = stamp;
-var dégradé = gradient;
-var opacité = opacity;
-var fluide = smooth;
-var joue = playsound;
-var afficheImage = showimage;
-var afficheVideo = showvideo;
-var cercle = circle;
-var polygone = polygon;
-var étoile = star;
-
 // Media functions
 var playsound = (url) => {
     const audio = new Audio(url);
@@ -137,3 +109,50 @@ var showvideo = (url, x, y, w, h) => {
         drawVideo();
     };
 };
+
+// French Aliases
+var av = fd;
+var re = bk;
+var td = rt;
+var tg = lt;
+var lc = pu;
+var bc = pd;
+var ve = cs;
+var ct = ht;
+var mt = st;
+var fcc = setcolor;
+var fcb = fillcolor;
+var fcap = setheading;
+var fpos = setxy;
+var fca = canvascolor;
+var ftc = setwidth;
+var remplis = fill;
+var rvb = (r, g, b) => `rgb(${r},${g},${b})`;
+var écris = write;
+var tampon = stamp;
+var dégradé = gradient;
+var opacité = opacity;
+var fluide = smooth;
+var joue = playsound;
+var afficheImage = showimage;
+var afficheVideo = showvideo;
+var cercle = circle;
+var polygone = polygon;
+var étoile = star;
+var répète = repeat;
+
+// Uppercase aliases
+var FD = fd, BK = bk, RT = rt, LT = lt, PU = pu, PD = pd, CS = cs, CLEAN = clean, HOME = home;
+var SETCOLOR = setcolor, SETWIDTH = setwidth, PS = ps;
+var ARC = arc, CIRCLE = circle, E = e, RECTANGLE = rectangle, ELLIPSE = ellipse, LINE = line, WRITE = write, FONT = font;
+var POLYGON = polygon, STAR = star, STAMP = stamp, DRAWIMAGE = drawimage, GRADIENT = gradient, OPACITY = opacity, SMOOTH = smooth;
+var SETXY = setxy, SETHEADING = setheading, HT = ht, ST = st, POSX = posx, POSY = posy, HEADING = heading, NG = ng;
+var DISTANCE = distance, NCE = nce, TOWARDS = towards, DS = ds;
+var PENCOLOR = pencolor, PC = pc, FILLCOLOR = fillcolor, FILL = fill, CANVASCOLOR = canvascolor;
+var REPEAT = repeat;
+
+var AV = av, RE = re, TD = td, TG = tg, LC = lc, BC = bc, VE = ve, CT = ht, MT = st;
+var FCC = fcc, FCB = fcb, FCAP = fcap, FPOS = fpos, FCA = fca, FTC = ftc;
+var REPETE = repeat, ECRIS = écris, REMPLIS = remplis, TAMPON = tampon, DEGRADE = dégradé, OPACITE = opacité, FLUIDE = fluide;
+var JOUE = joue, AFFICHEIMAGE = afficheImage, AFFICHEVIDEO = afficheVideo, RVB = rvb;
+var CERCLE = cercle, POLYGONE = polygone, ETOILE = étoile;

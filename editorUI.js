@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (lastWordMatch) {
                 const lastWord = lastWordMatch[1];
                 const keywords = ["donne", "declare", "si", "sinon", "tantque", "repete", "choisis", "autres", "classe", "pour", "fin", "case", "default", "stop", "continue", "rends"];
-                const commands = ["av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "tampon", "dégradé", "opacité", "fluide", "joue", "afficheImage", "afficheVideo", "cercle", "polygone", "étoile", "fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "ht", "st", "ps", "setwidth", "circle", "rectangle", "ellipse", "polygon", "star", "stamp", "drawimage", "opacity", "smooth", "setxy", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor"];
+                const commands = ["av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcb", "fcap", "fpos", "fca", "ftc", "écris", "remplis", "tampon", "dégradé", "opacité", "fluide", "joue", "afficheImage", "showimage", "afficheVideo", "showvideo", "cercle", "polygone", "étoile", "rvb", "fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "ht", "st", "ps", "setwidth", "circle", "rectangle", "ellipse", "polygon", "star", "stamp", "drawimage", "opacity", "smooth", "setxy", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor"];
 
                 // Also check for user defined procedures in the current text
                 const userProcs = [];

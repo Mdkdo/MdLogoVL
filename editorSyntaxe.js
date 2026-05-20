@@ -1,4 +1,7 @@
+let _logoLoopCounter = 0;
+
 function translateLogoToJS(code) {
+    _logoLoopCounter = 0;
     let placeholders = [];
     // Protect strings and comments
     let js = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, (match) => {
@@ -36,10 +39,10 @@ function translateLogoToJS(code) {
         out = out.replace(/\bCONTINUE\b/gi, 'continue');
 
         // Commands without parentheses
-        const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon"];
-        const oneArgCmds = ["fd", "bk", "rt", "lt", "setwidth", "ps", "circle", "e", "write", "font", "opacity", "smooth", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "av", "re", "td", "tg", "fcc", "fcl", "fcap", "fpos", "fct", "écris", "opacité", "fluide", "joue", "playsound", "afficheImage", "showimage", "afficheVideo", "showvideo"];
+        const zeroArgCmds = ["pu", "pd", "cs", "clean", "home", "ht", "st", "stamp", "lc", "bc", "ve", "ct", "mt", "tampon", "remplis"];
+        const oneArgCmds = ["fd", "bk", "rt", "lt", "setwidth", "ps", "circle", "e", "write", "font", "opacity", "smooth", "setheading", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "av", "re", "td", "tg", "fcc", "fcb", "fcap", "fpos", "fca", "ftc", "écris", "ecris", "opacité", "opacite", "fluide", "joue", "playsound", "afficheImage", "showimage", "afficheVideo", "showvideo"];
         const twoArgCmds = ["setxy", "fpos", "arc", "rectangle", "ellipse", "polygon", "polygone", "distance", "nce", "towards", "ds", "mod", "modulo", "o", "cercle"];
-        const threeArgCmds = ["star", "étoile", "etoile"];
+        const threeArgCmds = ["star", "étoile", "etoile", "rvb"];
 
         const arityMap = {};
         zeroArgCmds.forEach(c => arityMap[c.toUpperCase()] = 0);
@@ -106,16 +109,17 @@ function translateLogoToJS(code) {
             let startOutput = output;
 
             // REPETE n [ body ] -> native for loop to support STOP/CONTINUE
-            let repMatch = /\bREPETE\s+(\d+|[a-zA-Z0-9_$À-ÿ]+|(?:\([^()]+\)))\s*\[/gi.exec(output);
+            let repMatch = /\bREPETE\s+(\d+|:[a-zA-Z0-9_$À-ÿ]+|[a-zA-Z0-9_$À-ÿ]+|(?:\([^()]+\)))\s*\[/gi.exec(output);
             if (repMatch) {
                 const match = repMatch[0];
-                const n = repMatch[1];
+                let n = repMatch[1];
+                if (n.startsWith(':')) n = n.substring(1);
                 const offset = repMatch.index;
                 const endIdx = findBalanced(output, '[', ']', offset + match.length - 1);
                 if (endIdx !== -1) {
                     const body = output.substring(offset + match.length, endIdx);
                     const translatedBody = translateBlocks(body, userProcs);
-                    const loopVar = `_i${loopCounter++}`;
+                    const loopVar = `_i${_logoLoopCounter++}`;
                     output = output.substring(0, offset) + `for(let ${loopVar}=0; ${loopVar}<${n}; ${loopVar}++){ ${translatedBody} }` + output.substring(endIdx + 1);
                     continue;
                 }
@@ -282,12 +286,12 @@ function updateHighlight() {
         "sin", "cos", "tan", "atan", "pi", "sqrt", "pow", "abs", "exp", "ln", "random", "m",
         "integer", "round", "ceil", "mod", "modulo", "o", "min", "max", "rgb",
         "playsound", "showimage", "showvideo", "repeat",
-        "av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcl", "fcap", "fpos", "fct", 
-        "répète", "écris", "tampon", "dégradé", "opacité", "fluide", "joue", 
-        "afficheImage", "afficheVideo", "cercle", "polygone", "étoile",
-        "AV", "RE", "TD", "TG", "LC", "BC", "VE", "CT", "MT", "FCC", "FCL", "FCAP", "FPOS", "FCT",
-        "REPETE", "ECRIS", "TAMPON", "DEGRADE", "OPACITE", "FLUIDE", "JOUE",
-        "AFFICHEIMAGE", "AFFICHEVIDEO", "CERCLE", "POLYGONE", "ETOILE",
+        "av", "re", "td", "tg", "lc", "bc", "ve", "ct", "mt", "fcc", "fcb", "fcap", "fpos", "fca", "ftc",
+        "répète", "écris", "remplis", "tampon", "dégradé", "opacité", "fluide", "joue",
+        "afficheImage", "afficheVideo", "cercle", "polygone", "étoile", "rvb",
+        "AV", "RE", "TD", "TG", "LC", "BC", "VE", "CT", "MT", "FCC", "FCB", "FCAP", "FPOS", "FCA", "FTC",
+        "REPETE", "ECRIS", "REMPLIS", "TAMPON", "DEGRADE", "OPACITE", "FLUIDE", "JOUE",
+        "AFFICHEIMAGE", "AFFICHEVIDEO", "CERCLE", "POLYGONE", "ETOILE", "RVB",
         "FD", "BK", "RT", "LT", "PU", "PD", "CS", "CLEAN", "HOME", "SETCOLOR", "SETWIDTH", "PS",
         "ARC", "CIRCLE", "RECTANGLE", "ELLIPSE", "LINE", "WRITE", "FONT",
         "POLYGON", "STAR", "STAMP", "DRAWIMAGE", "GRADIENT", "OPACITY", "SMOOTH",
@@ -383,7 +387,7 @@ function getHelpers() {
         sin, cos, tan, atan, pi, sqrt, pow, abs, exp, ln, random, m,
         integer, round, ceil, mod, modulo, o, min, max, rgb,
         playsound, showimage, showvideo, repeat,
-        av, re, td, tg, lc, bc, ve, ct, mt, fcc, fcl, fcap, fpos, fct, 
+        av, re, td, tg, lc, bc, ve, ct, mt, fcc, fcb, fcap, fpos, fca, ftc,
         répète, écris, tampon, dégradé, opacité, fluide, joue, 
         afficheImage, afficheVideo, cercle, polygone, étoile,
         FD: fd, BK: bk, RT: rt, LT: lt, PU: pu, PD: pd, CS: cs, CLEAN: clean, HOME: home,
@@ -394,9 +398,9 @@ function getHelpers() {
         DISTANCE: distance, NCE: nce, TOWARDS: towards, DS: ds,
         PENCOLOR: pencolor, PC: pc, FILLCOLOR: fillcolor, FILL: fill, CANVASCOLOR: canvascolor,
         REPEAT: repeat, AV: av, RE: re, TD: td, TG: tg, LC: lc, BC: bc, VE: ve, CT: ht, MT: st,
-        FCC: fcc, FCL: fcl, FCAP: fcap, FPOS: fpos, FCT: fct,
-        REPETE: repeat, ECRIS: écris, TAMPON: stamp, DEGRADE: gradient, OPACITE: opacity, FLUIDE: smooth,
-        JOUE: playsound, AFFICHEIMAGE: showimage, AFFICHEVIDEO: showvideo,
+        FCC: fcc, FCB: fcb, FCAP: fcap, FPOS: fpos, FCA: fca, FTC: ftc,
+        REPETE: repeat, ECRIS: écris, REMPLIS: remplis, TAMPON: stamp, DEGRADE: gradient, OPACITE: opacity, FLUIDE: smooth,
+        JOUE: playsound, AFFICHEIMAGE: showimage, AFFICHEVIDEO: showvideo, RVB: rvb,
         CERCLE: circle, POLYGONE: polygon, ETOILE: star,
         console: {
             log: (...args) => logToTerminal(args.join(' '), 'log'),
