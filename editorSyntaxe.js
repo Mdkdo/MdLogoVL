@@ -59,7 +59,18 @@ function translateLogoToJS(code) {
             if (token.trim() === "") { newJs += token; continue; }
             let upperToken = token.toUpperCase();
 
-            if (arityMap[upperToken] !== undefined) {
+            // Look behind and ahead to see if it's a function definition or already a call
+            let isFuncDef = false;
+            let lookBehind = i - 1;
+            while (lookBehind >= 0 && tokens[lookBehind].trim() === "") lookBehind--;
+            if (lookBehind >= 0 && tokens[lookBehind] === "function") isFuncDef = true;
+
+            let isAlreadyCall = false;
+            let lookAhead = i + 1;
+            while (lookAhead < tokens.length && tokens[lookAhead].trim() === "") lookAhead++;
+            if (lookAhead < tokens.length && tokens[lookAhead] === "(") isAlreadyCall = true;
+
+            if (arityMap[upperToken] !== undefined && !isFuncDef && !isAlreadyCall) {
                 let arity = arityMap[upperToken];
                 let args = [];
                 let currentIdx = i + 1;
@@ -78,7 +89,7 @@ function translateLogoToJS(code) {
                     i = currentIdx - 1;
                 } else {
                     newJs += token;
-                    if (arity === 0 && (i + 1 >= tokens.length || tokens[i+1].trim() !== "(")) newJs += "()";
+                    if (arity === 0) newJs += "()";
                 }
             } else {
                 newJs += token;
