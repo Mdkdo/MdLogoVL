@@ -1,10 +1,10 @@
 (function(global) {
     let _logoLoopCounter = 0;
 
-    const zeroArgCmds = ["PU", "PD", "CS", "LC", "BC", "VE", "NETTOIE", "ORIGINE", "CT", "MT", "TAMPON", "REMPLIS"];
-    const oneArgCmds = ["AV", "RE", "TD", "TG", "FTC", "FCC", "FCB", "FCAP", "FCA", "CERCLE", "OPACITE", "FLUIDE", "JOUE", "ECRIS", "ENTIER", "ARRONDI", "PLAFOND", "VALABS", "RACINE", "EXP", "LOGN", "HASARD", "SIN", "COS", "TAN", "ATAN", "PI"];
-    const twoArgCmds = ["FPOS", "POLYGONE", "RECTANGLE", "ELLIPSE", "DISTANCE", "NCE", "TOWARDS", "DS", "MODULO", "RVB", "ARC"];
-    const threeArgCmds = ["ETOILE"];
+    const zeroArgCmds = ["PU", "PD", "CS", "LC", "BC", "VE", "NETTOIE", "ORIGINE", "CT", "MT", "TAMPON", "REMPLIS", "POSX", "POSY", "CAP", "PI"];
+    const oneArgCmds = ["AV", "RE", "TD", "TG", "FTC", "FCC", "FCB", "FCAP", "FCA", "CERCLE", "OPACITE", "FLUIDE", "JOUE", "ECRIS", "ENTIER", "ARRONDI", "PLAFOND", "VALABS", "RACINE", "EXP", "LOGN", "HASARD", "SIN", "COS", "TAN", "ATAN"];
+    const twoArgCmds = ["FPOS", "POLYGONE", "RECTANGLE", "ELLIPSE", "DISTANCE", "NCE", "TOWARDS", "DS", "MODULO", "ARC"];
+    const threeArgCmds = ["ETOILE", "RVB"];
 
     const arityMap = {};
     zeroArgCmds.forEach(c => arityMap[c] = 0);
@@ -12,10 +12,10 @@
     twoArgCmds.forEach(c => arityMap[c] = 2);
     threeArgCmds.forEach(c => arityMap[c] = 3);
     Object.assign(arityMap, {
-        "pu":0, "pd":0, "cs":0, "clean":0, "home":0, "ht":0, "st":0, "stamp":0,
+        "pu":0, "pd":0, "cs":0, "clean":0, "home":0, "ht":0, "st":0, "stamp":0, "posx":0, "posy":0, "heading":0, "pi":0,
         "fd":1, "bk":1, "rt":1, "lt":1, "setwidth":1, "setcolor":1, "fillcolor":1, "setheading":1, "canvascolor":1, "circle":1, "opacity":1, "smooth":1, "playsound":1, "write":1, "integer":1, "round":1, "ceil":1, "abs":1, "sqrt":1, "exp":1, "ln":1, "random":1, "sin":1, "cos":1, "tan":1,
-        "setxy":2, "polygon":2, "rectangle":2, "ellipse":2, "distance":2, "towards":2, "mod":2, "rgb":2, "arc":2,
-        "star":3
+        "setxy":2, "polygon":2, "rectangle":2, "ellipse":2, "distance":2, "towards":2, "mod":2, "arc":2,
+        "star":3, "rgb":3
     });
 
     function getFullArityMap(userProcs) {
@@ -28,11 +28,16 @@
         _logoLoopCounter = 0;
         const userProcs = {};
         let codeClean = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
-        const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([\s\S]*?)\n/gi;
+        const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([^\n]*)/gi;
         let m;
         while ((m = procRegex.exec(codeClean)) !== null) {
             const name = m[1];
-            const params = m[2].trim().split(/\s+/).filter(p => p.startsWith(':'));
+            const params = m[2].trim().split(/\s+/).filter(p => {
+                if (p.startsWith(':')) return true;
+                if (p === "") return false;
+                const u = p.toUpperCase();
+                return !global.LOGO_KEYWORDS.includes(u) && !global.LOGO_COMMANDS.includes(u);
+            });
             userProcs[name.toUpperCase()] = params.length;
         }
         let js = translateBlocks(code, userProcs);
@@ -42,10 +47,10 @@
 
     function tokenize(input) {
         // Updated regex to support quoted strings "..." and multi-char operators
-        return input.split(/(\s+|"(?:[^"\\]|\\.)*"|[\[\]{}();,]|\+\+|--|\+=|-=|\*=|\/=|==|=)/).filter(t => t.length > 0);
+        return input.split(/(\s+|"(?:[^"\\]|\\.)*"|[\[\]{}();,]|\+\+|--|\+=|-=|\*=|\/=|==|=|\+|-|\*|\/|%|>|<|!|\^)/).filter(t => t.length > 0);
     }
 
-    function translateBlocks(input, userProcs, isClass = false) {
+    function translateBlocks(input, userProcs = {}, isClass = false) {
         const fullArityMap = getFullArityMap(userProcs);
         let tokens = tokenize(input);
         let output = "";
@@ -53,6 +58,7 @@
             let token = tokens[i];
             let trimmed = token.trim();
             if (!trimmed) { output += token; continue; }
+            if (trimmed === ",") continue;
             let upper = trimmed.toUpperCase();
 
             if (upper === 'POUR') {
@@ -61,7 +67,12 @@
                 let params = [];
                 while (j < tokens.length) {
                     if (tokens[j].trim() === "") { if (tokens[j].includes('\n')) break; j++; continue; }
-                    if (tokens[j].startsWith(':')) { params.push(tokens[j].substring(1)); j++; continue; }
+                    let t = tokens[j].trim();
+                    if (t.startsWith(':')) { params.push(t.substring(1)); j++; continue; }
+                    let u = t.toUpperCase();
+                    if (t !== "" && !global.LOGO_KEYWORDS.includes(u) && !global.LOGO_COMMANDS.includes(u)) {
+                        params.push(t); j++; continue;
+                    }
                     break;
                 }
                 let endIdx = -1; let depth = 0;
@@ -79,7 +90,7 @@
             }
             if (upper === 'REPETE' || upper === 'REPEAT') {
                 let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                let nRes = transpileOneCommand(tokens, j, fullArityMap);
+                let nRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
                 j = nRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
                 if (tokens[j] === '[') {
                     let endIdx = findBalancedTokens(tokens, '[', ']', j);
@@ -94,7 +105,7 @@
             }
             if (upper === 'SI' || upper === 'IF' || upper === 'TANTQUE' || upper === 'WHILE') {
                 const isSi = (upper === 'SI' || upper === 'IF');
-                let j = i + 1; let condRes = transpileOneCommand(tokens, j, fullArityMap);
+                let j = i + 1; let condRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
                 j = condRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
                 if (tokens[j] === '[') {
                     let endIdx1 = findBalancedTokens(tokens, '[', ']', j);
@@ -125,7 +136,7 @@
                 }
             }
             if (upper === 'CHOISIS' || upper === 'SWITCH') {
-                let j = i + 1; let valRes = transpileOneCommand(tokens, i + 1, fullArityMap);
+                let j = i + 1; let valRes = transpileOneCommand(tokens, i + 1, fullArityMap, userProcs);
                 j = valRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
                 if (tokens[j] === '[') {
                     let endIdx = findBalancedTokens(tokens, '[', ']', j);
@@ -177,12 +188,12 @@
                     while (j < tokens.length && tokens[j].trim() === "") j++;
                     if (j < tokens.length && ["=", "+=", "-=", "*=", "/="].includes(tokens[j])) {
                         let op = tokens[j];
-                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap);
+                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap, userProcs);
                         if (varName.includes('.') || varName.startsWith('this')) output += `${varName} ${op} ${valRes.js}; `;
                         else output += `var ${varName} ${op} ${valRes.js}; `;
                         i = valRes.nextIdx - 1;
                     } else {
-                        let valRes = transpileOneCommand(tokens, j, fullArityMap);
+                        let valRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
                         if (varName.includes('.') || varName.startsWith('this')) output += `${varName} = ${valRes.js}; `;
                         else output += `var ${varName} = ${valRes.js}; `;
                         i = valRes.nextIdx - 1;
@@ -201,7 +212,7 @@
                         output += `${varName}${op}; `;
                         i = j;
                     } else {
-                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap);
+                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap, userProcs);
                         output += `${varName} ${op} ${valRes.js}; `;
                         i = valRes.nextIdx - 1;
                     }
@@ -229,7 +240,7 @@
             if (fullArityMap[upper] !== undefined) {
                 let lookBehind = i - 1; while (lookBehind >= 0 && tokens[lookBehind].trim() === "") lookBehind--;
                 if (lookBehind >= 0 && (tokens[lookBehind] === "function" || tokens[lookBehind] === "class")) { output += token; continue; }
-                let sub = transpileOneCommand(tokens, i, fullArityMap);
+                let sub = transpileOneCommand(tokens, i, fullArityMap, userProcs);
                 output += sub.js + "; "; i = sub.nextIdx - 1;
             } else {
                 if (token.startsWith('"')) {
@@ -245,15 +256,20 @@
         return output;
     }
 
-    function transpileOneCommand(tokens, startIndex, fullArityMap) {
-        let i = startIndex; while (i < tokens.length && tokens[i].trim() === "") i++;
+    function transpileOneCommand(tokens, startIndex, fullArityMap, userProcs) {
+        let i = startIndex;
+        while (i < tokens.length && (tokens[i].trim() === "" || tokens[i] === ",")) i++;
         if (i >= tokens.length) return { js: "", nextIdx: i };
         let token = tokens[i].trim(); let upper = token.toUpperCase(); let arity = fullArityMap[upper];
         let resultJS = ""; let currentIdx = i;
         if (arity === undefined) {
             if (token === "(") {
                 let end = findBalancedTokens(tokens, '(', ')', i);
-                if (end !== -1) { let insideJS = translateBlocks(tokens.slice(i + 1, end).join(""), {}); resultJS = "(" + insideJS + ")"; currentIdx = end + 1; }
+                if (end !== -1) { let insideJS = translateBlocks(tokens.slice(i + 1, end).join(""), userProcs); resultJS = "(" + insideJS + ")"; currentIdx = end + 1; }
+            } else if (token === "-" || token === "!" || token === "+") {
+                let sub = transpileOneCommand(tokens, i + 1, fullArityMap, userProcs);
+                resultJS = token + sub.js;
+                currentIdx = sub.nextIdx;
             } else if (token === "[") {
                 let end = findBalancedTokens(tokens, '[', ']', i);
                 if (end !== -1) { let inside = tokens.slice(i + 1, end).join("").trim(); resultJS = JSON.stringify(inside); currentIdx = end + 1; }
@@ -269,19 +285,19 @@
             else { resultJS = token; currentIdx = i + 1; }
         } else {
             let args = []; currentIdx = i + 1;
-            for (let a = 0; a < arity; a++) { let sub = transpileOneCommand(tokens, currentIdx, fullArityMap); args.push(sub.js); currentIdx = sub.nextIdx; }
+            for (let a = 0; a < arity; a++) { let sub = transpileOneCommand(tokens, currentIdx, fullArityMap, userProcs); args.push(sub.js); currentIdx = sub.nextIdx; }
             resultJS = token + "(" + args.join(", ") + ")";
         }
         while (currentIdx < tokens.length) {
             let nextTok = tokens[currentIdx]; let nt = nextTok.trim();
             if (nt === "") {
                 let peek = currentIdx + 1; while (peek < tokens.length && tokens[peek].trim() === "") peek++;
-                if (peek < tokens.length && "+-*/%><=!".split("").some(op => tokens[peek].trim().includes(op))) { resultJS += nextTok; currentIdx++; continue; }
+                if (peek < tokens.length && "+-*/%><=!^".split("").some(op => tokens[peek].trim().includes(op))) { resultJS += nextTok; currentIdx++; continue; }
                 break;
             }
-            if ("+-*/%><=!".split("").some(op => nt.includes(op))) {
+            if ("+-*/%><=!^".split("").some(op => nt.includes(op))) {
                 resultJS += nt; currentIdx++;
-                let sub = transpileOneCommand(tokens, currentIdx, fullArityMap); resultJS += sub.js; currentIdx = sub.nextIdx; continue;
+                let sub = transpileOneCommand(tokens, currentIdx, fullArityMap, userProcs); resultJS += sub.js; currentIdx = sub.nextIdx; continue;
             }
             break;
         }
