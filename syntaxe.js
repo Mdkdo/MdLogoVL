@@ -1,25 +1,33 @@
-// Math functions (in degrees)
-const degToRad = (d) => (d * Math.PI) / 180;
-const radToDeg = (r) => (r * 180) / Math.PI;
+(function(global) {
+    global.pi = Math.PI;
+    global.sqrt = Math.sqrt;
+    global.pow = Math.pow;
+    global.abs = Math.abs;
+    global.exp = Math.exp;
+    global.ln = Math.log;
+    global.integer = Math.floor;
+    global.round = Math.round;
+    global.ceil = Math.ceil;
+    global.min = Math.min;
+    global.max = Math.max;
 
-var sin = (d) => Math.sin(degToRad(d));
-var cos = (d) => Math.cos(degToRad(d));
-var tan = (d) => Math.tan(degToRad(d));
-var atan = (y, x) => radToDeg(Math.atan2(y, x));
-var pi = Math.PI;
-var sqrt = Math.sqrt;
-var pow = Math.pow;
-var abs = Math.abs;
-var exp = Math.exp;
-var ln = Math.log;
-var random = (n) => Math.random() * n;
-var m = random;
-var integer = Math.floor;
-var round = Math.round;
-var ceil = Math.ceil;
-var mod = (a, b) => a % b;
-var modulo = mod;
-var o = mod;
-var min = Math.min;
-var max = Math.max;
-var rgb = (r, g, b) => `rgb(${r},${g},${b})`;
+    const degToRad = (d) => (d * Math.PI) / 180;
+    const radToDeg = (r) => (r * 180) / Math.PI;
+
+    global.sin = (d) => Math.sin(degToRad(d));
+    global.cos = (d) => Math.cos(degToRad(d));
+    global.tan = (d) => Math.tan(degToRad(d));
+    global.atan = (y, x) => radToDeg(Math.atan2(y, x));
+    global.random = (n) => Math.random() * n;
+    global.m = global.random;
+    global.mod = (a, b) => a % b;
+    global.modulo = global.mod;
+    global.o = global.mod;
+    global.rgb = (r, g, b) => \`rgb(\${r},\${g},\${b})\`;
+    global.RVB = global.rgb;
+
+    // Additional Math Aliases
+    global.SIN = global.sin; global.COS = global.cos; global.TAN = global.tan; global.ATAN = global.atan;
+    global.SQRT = global.sqrt; global.ABS = global.abs; global.EXP = global.exp; global.LN = global.ln;
+    global.RANDOM = global.random; global.MOD = global.mod; global.MODULO = global.mod;
+})(window);
