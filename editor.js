@@ -41,7 +41,8 @@
     };
 
     function tokenize(input) {
-        return input.split(/(\s+|"[\S]*|[\[\]{}();,])/).filter(t => t.length > 0);
+        // Updated regex to support quoted strings "..." and multi-char operators
+        return input.split(/(\s+|"(?:[^"\\]|\\.)*"|[\[\]{}();,]|\+\+|--|\+=|-=|\*=|\/=|==|=)/).filter(t => t.length > 0);
     }
 
     function translateBlocks(input, userProcs, isClass = false) {
@@ -53,6 +54,7 @@
             let trimmed = token.trim();
             if (!trimmed) { output += token; continue; }
             let upper = trimmed.toUpperCase();
+
             if (upper === 'POUR') {
                 let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
                 let name = tokens[j] || ""; j++;
@@ -123,7 +125,7 @@
                 }
             }
             if (upper === 'CHOISIS' || upper === 'SWITCH') {
-                let j = i + 1; let valRes = transpileOneCommand(tokens, j, fullArityMap);
+                let j = i + 1; let valRes = transpileOneCommand(tokens, i + 1, fullArityMap);
                 j = valRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
                 if (tokens[j] === '[') {
                     let endIdx = findBalancedTokens(tokens, '[', ']', j);
@@ -173,10 +175,12 @@
                     let varNameRaw = tokens[j].substring(1);
                     let varName = varNameRaw.replace(/:/g, ''); j++;
                     while (j < tokens.length && tokens[j].trim() === "") j++;
-                    if (j < tokens.length && tokens[j] === "=") {
-                        if (varName.includes('.') || varName.startsWith('this')) output += `${varName} = `;
-                        else output += `var ${varName} = `;
-                        i = j;
+                    if (j < tokens.length && ["=", "+=", "-=", "*=", "/="].includes(tokens[j])) {
+                        let op = tokens[j];
+                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap);
+                        if (varName.includes('.') || varName.startsWith('this')) output += `${varName} ${op} ${valRes.js}; `;
+                        else output += `var ${varName} ${op} ${valRes.js}; `;
+                        i = valRes.nextIdx - 1;
                     } else {
                         let valRes = transpileOneCommand(tokens, j, fullArityMap);
                         if (varName.includes('.') || varName.startsWith('this')) output += `${varName} = ${valRes.js}; `;
@@ -186,6 +190,25 @@
                 }
                 continue;
             }
+
+            // New logic: catch :var = , :var +=, :var++, etc. without DONNE
+            if (token.startsWith(':')) {
+                let varName = token.substring(1);
+                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
+                if (j < tokens.length && ["=", "+=", "-=", "*=", "/=", "++", "--"].includes(tokens[j])) {
+                    let op = tokens[j];
+                    if (op === "++" || op === "--") {
+                        output += `${varName}${op}; `;
+                        i = j;
+                    } else {
+                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap);
+                        output += `${varName} ${op} ${valRes.js}; `;
+                        i = valRes.nextIdx - 1;
+                    }
+                    continue;
+                }
+            }
+
             if (isClass && trimmed !== "") {
                 let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
                 if (j < tokens.length && tokens[j] === "[") {
@@ -199,6 +222,7 @@
                     }
                 }
             }
+
             if (upper === 'RENDS' || upper === 'RETURN') { output += "return "; continue; }
             if (upper === 'STOP' || upper === 'BREAK') { output += "break; "; continue; }
             if (upper === 'CONTINUE') { output += "continue; "; continue; }
@@ -208,7 +232,13 @@
                 let sub = transpileOneCommand(tokens, i, fullArityMap);
                 output += sub.js + "; "; i = sub.nextIdx - 1;
             } else {
-                if (token.startsWith('"')) output += JSON.stringify(token.substring(1));
+                if (token.startsWith('"')) {
+                    if (token.endsWith('"') && token.length > 1) {
+                         output += token; // Full quoted string
+                    } else {
+                         output += JSON.stringify(token.substring(1)); // Old Logo "string
+                    }
+                }
                 else output += token;
             }
         }
@@ -228,7 +258,14 @@
                 let end = findBalancedTokens(tokens, '[', ']', i);
                 if (end !== -1) { let inside = tokens.slice(i + 1, end).join("").trim(); resultJS = JSON.stringify(inside); currentIdx = end + 1; }
             } else if (token.startsWith(':')) { resultJS = token.substring(1); currentIdx = i + 1; }
-            else if (token.startsWith('"')) { resultJS = JSON.stringify(token.substring(1)); currentIdx = i + 1; }
+            else if (token.startsWith('"')) {
+                if (token.endsWith('"') && token.length > 1) {
+                    resultJS = token; // Full quoted string
+                } else {
+                    resultJS = JSON.stringify(token.substring(1));
+                }
+                currentIdx = i + 1;
+            }
             else { resultJS = token; currentIdx = i + 1; }
         } else {
             let args = []; currentIdx = i + 1;
@@ -323,7 +360,7 @@
         const helpers = {};
         const keys = global.LOGO_ALL_CAPS || [];
         keys.forEach(k => { if (global[k] !== undefined) helpers[k] = global[k]; });
-        ["fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "setcolor", "setwidth", "ps", "arc", "circle", "rectangle", "ellipse", "line", "write", "font", "polygon", "star", "stamp", "drawimage", "gradient", "opacity", "smooth", "setxy", "setheading", "ht", "st", "posx", "posy", "heading", "distance", "towards", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "pi", "sqrt", "pow", "abs", "exp", "ln", "integer", "round", "ceil", "min", "max", "sin", "cos", "tan", "atan", "random", "mod", "rgb", "playsound", "showimage", "showvideo"].forEach(k => { if (global[k] !== undefined) helpers[k] = global[k]; });
+        ["fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "setcolor", "setwidth", "ps", "arc", "circle", "rectangle", "ellipse", "line", "write", "font", "polygon", "star", "stamp", "drawimage", "gradient", "opacity", "smooth", "setxy", "setheading", "ht", "st", "posx", "posy", "heading", "distance", "towards", "ds", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "pi", "sqrt", "pow", "abs", "exp", "ln", "integer", "round", "ceil", "min", "max", "sin", "cos", "tan", "atan", "random", "mod", "rgb", "playsound", "showimage", "showvideo"].forEach(k => { if (global[k] !== undefined) helpers[k] = global[k]; });
         helpers.console = { log: (...args) => global.logToTerminal(args.join(' '), 'log'), error: (...args) => global.logToTerminal(args.join(' '), 'error'), warn: (...args) => global.logToTerminal(args.join(' '), 'warn'), clear: () => { document.getElementById('terminalOutput').innerHTML = ''; } };
         return helpers;
     };
@@ -496,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         codeEditor.selectionStart = codeEditor.selectionEnd = start + text.length; window.updateHighlight();
     });
     function modifySelection(fn) {
-        const start = codeEditor.selectionStart; const end = codeEditor.selectionEnd; const text = codeEditor.value; const before = text.substring(0, start); const selection = text.substring(start, end); const after = text.substring(end);
+        const start = codeEditor.selectionStart; const end = codeEditor.selectionEnd; text = codeEditor.value; const before = text.substring(0, start); const selection = text.substring(start, end); const after = text.substring(end);
         const lines = selection.split('\n'); const newSelection = lines.map(fn).join('\n');
         saveState(); codeEditor.value = before + newSelection + after; codeEditor.selectionStart = start; codeEditor.selectionEnd = start + newSelection.length; window.updateHighlight();
     }
