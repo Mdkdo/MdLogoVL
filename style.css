@@ -265,8 +265,8 @@ button.danger { background: var(--danger-color); color: white; border: none; hei
 .setting-item select, .setting-item input { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
 
 /* Syntax Colors */
-.hl-keyword { color: var(--hl-keyword); font-weight: bold; }
-.hl-command { color: var(--hl-command); font-weight: bold; }
+.hl-keyword { color: var(--hl-keyword); font-weight: bold; text-decoration: none; }
+.hl-command { color: var(--hl-command); font-weight: bold; text-decoration: none; }
 .hl-string { color: var(--hl-string); }
 .hl-number { color: var(--hl-number); }
 .hl-comment { color: var(--hl-comment); font-style: italic; }
