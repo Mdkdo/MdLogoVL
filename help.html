@@ -95,15 +95,17 @@
         .keyword { color: #bb86fc; font-weight: bold; }
         .command { color: #03dac6; font-weight: bold; }
         .variable { color: #ff9800; font-weight: bold; }
+        .comment { color: #75715e; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>Navigation</h2>
+        <a href="#intro"><i class="fas fa-info-circle"></i> Introduction</a>
         <a href="#mouvement"><i class="fas fa-arrows-alt"></i> Mouvement</a>
         <a href="#stylo"><i class="fas fa-pen"></i> Stylo & Couleurs</a>
         <a href="#formes"><i class="fas fa-shapes"></i> Formes</a>
-        <a href="#media"><i class="fas fa-photo-video"></i> Média & Image</a>
+        <a href="#media"><i class="fas fa-photo-video"></i> Média & Texte</a>
         <a href="#math"><i class="fas fa-calculator"></i> Mathématiques</a>
         <a href="#structures"><i class="fas fa-code"></i> Contrôle & Boucles</a>
         <a href="#variables"><i class="fas fa-variable"></i> Variables & Procédures</a>
@@ -113,13 +115,22 @@
 
     <div class="main-content">
         <div class="container">
-            <h1>Documentation Logo VL Advanced</h1>
-            <p>Bienvenue dans la documentation du langage Logo VL Advanced. Ce langage utilise une syntaxe Logo classique (sans parenthèses pour les commandes) tout en offrant la puissance de JavaScript pour les structures complexes.</p>
+            <section id="intro">
+                <h1>Documentation Logo VL Advanced</h1>
+                <p>Bienvenue dans la documentation du langage Logo VL Advanced. Ce langage utilise une syntaxe Logo classique sans parenthèses pour les commandes, tout en offrant des fonctionnalités modernes.</p>
+                <div class="card">
+                    <h3>Points clés :</h3>
+                    <ul>
+                        <li><strong>Majuscules automatiques :</strong> L'éditeur convertit automatiquement les commandes en majuscules (ex: <code>av 100</code> devient <code>AV 100</code>).</li>
+                        <li><strong>Séparateurs optionnels :</strong> Vous pouvez utiliser la virgule <code>,</code> pour séparer les paramètres (utile pour les nombres négatifs : <code>FPOS 10, -20</code>).</li>
+                        <li><strong>Arité intelligente :</strong> Les commandes savent combien d'arguments elles attendent (<code>AV SIN 90</code> est compris comme <code>AV(sin(90))</code>).</li>
+                    </ul>
+                </div>
+            </section>
 
             <section id="mouvement">
                 <h2><i class="fas fa-arrows-alt"></i> Mouvement</h2>
                 <div class="card">
-                    <p>Les commandes de mouvement déplacent la tortue sur le canevas.</p>
                     <table>
                         <thead>
                             <tr><th>Commande</th><th>Description</th></tr>
@@ -129,11 +140,14 @@
                             <tr><td><code>RE n</code></td><td>Recule de <code>n</code> pas. (Alias: <code>BK</code>)</td></tr>
                             <tr><td><code>TD deg</code></td><td>Tourne à droite de <code>deg</code> degrés. (Alias: <code>RT</code>)</td></tr>
                             <tr><td><code>TG deg</code></td><td>Tourne à gauche de <code>deg</code> degrés. (Alias: <code>LT</code>)</td></tr>
-                            <tr><td><code>FPOS x y</code></td><td>Déplace la tortue aux coordonnées <code>(x, y)</code>.</td></tr>
-                            <tr><td><code>FCAP deg</code></td><td>Oriente la tortue vers l'angle <code>deg</code>.</td></tr>
-                            <tr><td><code>HOME</code></td><td>Ramène la tortue au centre (0, 0).</td></tr>
-                            <tr><td><code>VE</code></td><td>Vide l'écran et ramène la tortue au centre. (Alias: <code>CS</code>)</td></tr>
-                            <tr><td><code>CLEAN</code></td><td>Efface le dessin sans déplacer la tortue.</td></tr>
+                            <tr><td><code>FPOS x y</code></td><td>Déplace la tortue à <code>(x, y)</code>. (Alias: <code>SETXY</code>)</td></tr>
+                            <tr><td><code>FCAP deg</code></td><td>Définit le cap à <code>deg</code>. (Alias: <code>SETHEADING</code>)</td></tr>
+                            <tr><td><code>POSX</code>, <code>POSY</code></td><td>Retourne la coordonnée X ou Y actuelle.</td></tr>
+                            <tr><td><code>CAP</code></td><td>Retourne l'angle actuel. (Alias: <code>HEADING</code>)</td></tr>
+                            <tr><td><code>DISTANCE x y</code></td><td>Retourne la distance vers <code>(x, y)</code>.</td></tr>
+                            <tr><td><code>TOWARDS x y</code></td><td>Retourne l'angle pour pointer vers <code>(x, y)</code>.</td></tr>
+                            <tr><td><code>HOME</code></td><td>Retourne au centre (0, 0). (Alias: <code>ORIGINE</code>)</td></tr>
+                            <tr><td><code>VE</code></td><td>Vide l'écran et réinitialise la tortue. (Alias: <code>CS</code>)</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -147,21 +161,21 @@
                             <tr><th>Commande</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>LC</code></td><td>Lève le stylo (ne trace plus). (Alias: <code>PU</code>)</td></tr>
-                            <tr><td><code>BC</code></td><td>Abaisse le stylo (recommence à tracer). (Alias: <code>PD</code>)</td></tr>
-                            <tr><td><code>FCC couleur</code></td><td>Change la couleur du stylo.</td></tr>
-                            <tr><td><code>FTC n</code></td><td>Change l'épaisseur du trait. (Alias: <code>SETWIDTH</code>)</td></tr>
-                            <tr><td><code>FCB couleur</code></td><td>Change la couleur de remplissage.</td></tr>
-                            <tr><td><code>REMPLIS</code></td><td>Remplit la forme actuelle. (Alias: <code>FILL</code>)</td></tr>
-                            <tr><td><code>FCA couleur</code></td><td>Change la couleur du fond (canevas).</td></tr>
-                            <tr><td><code>OPACITE n</code></td><td>Définit l'opacité (0 à 1).</td></tr>
+                            <tr><td><code>LC</code></td><td>Lève le stylo. (Alias: <code>PU</code>)</td></tr>
+                            <tr><td><code>BC</code></td><td>Abaisse le stylo. (Alias: <code>PD</code>)</td></tr>
+                            <tr><td><code>FCC couleur</code></td><td>Couleur du trait (nom, #hex, ou <code>RVB</code>). (Alias: <code>SETCOLOR</code>)</td></tr>
+                            <tr><td><code>FCB couleur</code></td><td>Couleur de remplissage. (Alias: <code>FILLCOLOR</code>)</td></tr>
+                            <tr><td><code>FTC n</code></td><td>Épaisseur du trait. (Alias: <code>SETWIDTH</code>)</td></tr>
+                            <tr><td><code>REMPLIS</code></td><td>Remplit la zone fermée actuelle. (Alias: <code>FILL</code>)</td></tr>
+                            <tr><td><code>FCA couleur</code></td><td>Couleur du fond. (Alias: <code>CANVASCOLOR</code>)</td></tr>
+                            <tr><td><code>OPACITE n</code></td><td>Définit l'opacité (0.0 à 1.0).</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
             <section id="formes">
-                <h2><i class="fas fa-shapes"></i> Formes Géométriques</h2>
+                <h2><i class="fas fa-shapes"></i> Formes</h2>
                 <div class="card">
                     <table>
                         <thead>
@@ -169,12 +183,11 @@
                         </thead>
                         <tbody>
                             <tr><td><code>CERCLE r</code></td><td>Trace un cercle de rayon <code>r</code>.</td></tr>
-                            <tr><td><code>ARC deg r</code></td><td>Trace un arc de cercle.</td></tr>
-                            <tr><td><code>RECTANGLE w h</code></td><td>Trace un rectangle de largeur <code>w</code> et hauteur <code>h</code>.</td></tr>
+                            <tr><td><code>ARC a r</code></td><td>Trace un arc de <code>a</code> degrés et rayon <code>r</code>.</td></tr>
+                            <tr><td><code>RECTANGLE w h</code></td><td>Trace un rectangle de <code>w</code> par <code>h</code>.</td></tr>
                             <tr><td><code>ELLIPSE w h</code></td><td>Trace une ellipse.</td></tr>
-                            <tr><td><code>POLYGONE n t</code></td><td>Trace un polygone régulier de <code>n</code> côtés de taille <code>t</code>.</td></tr>
+                            <tr><td><code>POLYGONE n t</code></td><td>Trace un polygone de <code>n</code> côtés et taille <code>t</code>.</td></tr>
                             <tr><td><code>ETOILE p r1 r2</code></td><td>Trace une étoile à <code>p</code> branches.</td></tr>
-                            <tr><td><code>TAMPON</code></td><td>Laisse une empreinte de la tortue sur le canevas.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -188,10 +201,9 @@
                             <tr><th>Commande</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>AFFICHEIMAGE url w h</code></td><td>Affiche une image.</td></tr>
-                            <tr><td><code>JOUE url</code></td><td>Joue un son.</td></tr>
-                            <tr><td><code>ECRIS "texte"</code></td><td>Écrit du texte.</td></tr>
-                            <tr><td><code>POLICE "style"</code></td><td>Change la police (ex: "bold 20px Arial").</td></tr>
+                            <tr><td><code>ECRIS "texte"</code></td><td>Affiche du texte dans le terminal.</td></tr>
+                            <tr><td><code>AFFICHEIMAGE url [x y w h]</code></td><td>Affiche une image sur le canevas.</td></tr>
+                            <tr><td><code>JOUE url</code></td><td>Joue un fichier audio.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -205,67 +217,60 @@
                             <tr><th>Fonction</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>SIN(deg)</code>, <code>COS(deg)</code></td><td>Trigonométrie.</td></tr>
-                            <tr><td><code>HASARD n</code></td><td>Nombre aléatoire entre 0 et <code>n</code>.</td></tr>
-                            <tr><td><code>ENTIER n</code></td><td>Arrondi à l'entier inférieur.</td></tr>
+                            <tr><td><code>SIN deg</code>, <code>COS deg</code>, <code>TAN deg</code></td><td>Trigonométrie (en degrés).</td></tr>
+                            <tr><td><code>HASARD n</code></td><td>Nombre aléatoire entre 0 et <code>n</code>. (Alias: <code>RANDOM</code>)</td></tr>
+                            <tr><td><code>RACINE n</code></td><td>Racine carrée. (Alias: <code>SQRT</code>)</td></tr>
+                            <tr><td><code>n1 ^ n2</code></td><td>Puissance (ex: <code>2 ^ 3</code> pour 8).</td></tr>
                             <tr><td><code>MODULO a b</code></td><td>Reste de la division.</td></tr>
-                            <tr><td><code>RACINE n</code></td><td>Racine carrée.</td></tr>
-                            <tr><td><code>RVB r v b</code></td><td>Définit une couleur via ses composantes Rouge, Vert, Bleu.</td></tr>
-                            <tr><td><code>POSX</code>, <code>POSY</code></td><td>Coordonnées actuelles.</td></tr>
-                            <tr><td><code>CAP</code></td><td>Orientation actuelle.</td></tr>
+                            <tr><td><code>RVB r v b</code></td><td>Crée une couleur (0-255). (Alias: <code>RGB</code>)</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
             <section id="structures">
-                <h2><i class="fas fa-code"></i> Structures de contrôle</h2>
+                <h2><i class="fas fa-code"></i> Contrôle</h2>
                 <div class="card">
-                    <h3>REPETE (Boucle)</h3>
-                    <p>Répète un bloc d'instructions <code>n</code> fois. Accédez à l'index via <code>_i0</code> (ou <code>_i1</code>, etc. pour les boucles imbriquées).</p>
-                    <div class="example"><span class="keyword">REPETE</span> 4 [
-  <span class="command">AV</span> 100
-  <span class="command">TD</span> 90
-]</div>
+                    <h3>REPETE n [ ... ]</h3>
+                    <div class="example"><span class="keyword">REPETE</span> 36 [ <span class="command">AV</span> 10 <span class="command">TD</span> 10 ]</div>
 
-                    <h3>SI... SINON (Condition)</h3>
-                    <div class="example"><span class="keyword">SI</span> (:x == 10) [
-  <span class="command">AV</span> 100
-] <span class="keyword">SINON</span> [
-  <span class="command">RE</span> 100
-]</div>
+                    <h3>SI condition [ ... ] SINON [ ... ]</h3>
+                    <div class="example"><span class="keyword">SI</span> (:x > 10) [ <span class="command">AV</span> 100 ] <span class="keyword">SINON</span> [ <span class="command">RE</span> 100 ]</div>
 
-                    <h3>TANTQUE (Boucle conditionnelle)</h3>
-                    <div class="example"><span class="keyword">TANTQUE</span> (:x < 100) [
-  <span class="command">AV</span> :x
-  <span class="keyword">DONNE</span> :x (:x + 10)
-]</div>
+                    <h3>TANTQUE condition [ ... ]</h3>
+                    <div class="example"><span class="keyword">TANTQUE</span> (:x < 100) [ <span class="variable">:x</span>++ ]</div>
 
-                    <h3>STOP & CONTINUE</h3>
-                    <p><code>STOP</code> permet de sortir d'une boucle immédiatement. <code>CONTINUE</code> passe à l'itération suivante.</p>
+                    <h3>CHOISIS val [ CASE v1 [ ... ] AUTRES [ ... ] ]</h3>
+                    <div class="example"><span class="keyword">CHOISIS</span> (:c) [
+  <span class="keyword">CASE</span> "rouge" [ <span class="command">FCC</span> "red" ]
+  <span class="keyword">AUTRES</span> [ <span class="command">FCC</span> "black" ]
+]</div>
                 </div>
             </section>
 
             <section id="variables">
                 <h2><i class="fas fa-variable"></i> Variables & Procédures</h2>
                 <div class="card">
-                    <h3>Déclaration de variables</h3>
-                    <p>Utilisez <code>DONNE</code> pour créer ou modifier une variable. Les noms de variables doivent commencer par deux points <code>:</code>.</p>
-                    <div class="example"><span class="keyword">DONNE</span> <span class="variable">:taille</span> 100
-<span class="variable">:vitesse</span> = 50  <span class="hl-comment">// Affectation directe possible</span></div>
+                    <h3>Variables</h3>
+                    <p>Déclaration avec <code>DONNE</code> ou affectation directe.</p>
+                    <div class="example"><span class="keyword">DONNE</span> <span class="variable">:x</span> 10
+<span class="variable">:y</span> = 20
+<span class="variable">:x</span> += 5</div>
 
-                    <h3>Procédures (Fonctions)</h3>
-                    <p>Définissez vos propres commandes avec <code>POUR</code> et <code>FIN</code>.</p>
-                    <div class="example"><span class="keyword">POUR</span> CARRE <span class="variable">:cote</span>
-  <span class="keyword">REPETE</span> 4 [ <span class="command">AV</span> <span class="variable">:cote</span> <span class="command">TD</span> 90 ]
+                    <h3>Procédures</h3>
+                    <div class="example"><span class="keyword">POUR</span> TRIANGLE <span class="variable">:t</span>
+  <span class="keyword">REPETE</span> 3 [ <span class="command">AV</span> <span class="variable">:t</span> <span class="command">TD</span> 120 ]
 <span class="keyword">FIN</span>
 
-CARRE 150 <span class="hl-comment">// Appel de la procédure sans parenthèses</span></div>
+TRIANGLE 100</div>
 
-                    <h3>RENDS (Return)</h3>
-                    <p>Retourne une valeur depuis une procédure.</p>
-                    <div class="example"><span class="keyword">POUR</span> DOUBLE <span class="variable">:n</span>
-  <span class="keyword">RENDS</span> (:n * 2)
+                    <h3>Récursivité</h3>
+                    <div class="example"><span class="keyword">POUR</span> ARBRE <span class="variable">:t</span>
+  <span class="keyword">SI</span> :t < 5 [ <span class="keyword">STOP</span> ]
+  <span class="command">AV</span> :t
+  <span class="command">TG</span> 30 ARBRE :t * 0.7
+  <span class="command">TD</span> 60 ARBRE :t * 0.7
+  <span class="command">TG</span> 30 <span class="command">RE</span> :t
 <span class="keyword">FIN</span></div>
                 </div>
             </section>
@@ -273,17 +278,13 @@ CARRE 150 <span class="hl-comment">// Appel de la procédure sans parenthèses</
             <section id="avance">
                 <h2><i class="fas fa-cogs"></i> Avancé</h2>
                 <div class="card">
-                    <p>Le langage supporte également les concepts avancés de JavaScript via une syntaxe adaptée.</p>
-                    <ul>
-                        <li><strong>CLASSE :</strong> <code>CLASSE Nom [ ... ]</code> pour définir une classe.</li>
-                        <li><strong>CHOISIS :</strong> <code>CHOISIS (:val) [ CASE val1 [ ... ] AUTRES [ ... ] ]</code> pour un switch/case.</li>
-                        <li><strong>FLUIDE :</strong> <code>FLUIDE v</code> active/désactive l'animation fluide.</li>
-                    </ul>
-                    <div class="example"><span class="keyword">CHOISIS</span> (:couleur) [
-  <span class="keyword">CASE</span> "rouge" [ <span class="command">FCC</span> "red" ]
-  <span class="keyword">CASE</span> "bleu"  [ <span class="command">FCC</span> "blue" ]
-  <span class="keyword">AUTRES</span> [ <span class="command">FCC</span> "black" ]
+                    <h3>Classes</h3>
+                    <div class="example"><span class="keyword">CLASSE</span> Point [
+  constructeur [ <span class="variable">this.x</span> = 0 ]
+  setX [ <span class="keyword">DONNE</span> <span class="variable">this.x</span> 10 ]
 ]</div>
+                    <h3>Opérateurs</h3>
+                    <p>Supports des opérateurs : <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>, <code>^</code>, <code>++</code>, <code>--</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>==</code>, <code>!=</code>, <code>></code>, <code><</code>, <code>>=</code>, <code><=</code>.</p>
                 </div>
             </section>
         </div>
