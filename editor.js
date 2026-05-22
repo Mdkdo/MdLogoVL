@@ -50,7 +50,7 @@
         return input.split(/(\s+|"(?:[^"\\]|\\.)*"|[\[\]{}();,]|\+\+|--|\+=|-=|\*=|\/=|==|=|\+|-|\*|\/|%|>|<|!|\^)/).filter(t => t.length > 0);
     }
 
-    function translateBlocks(input, userProcs = {}, isClass = false) {
+    function translateBlocks(input, userProcs = {}, isClass = false, addSemicolons = true) {
         const fullArityMap = getFullArityMap(userProcs);
         let tokens = tokenize(input);
         let output = "";
@@ -117,7 +117,7 @@
                             if (tokens[nextJ] && (tokens[nextJ].toUpperCase() === 'SINON' || tokens[nextJ].toUpperCase() === 'ELSE')) {
                                 nextJ++; while (nextJ < tokens.length && tokens[nextJ].trim() === "") nextJ++;
                                 if (tokens[nextJ] === '[') {
-                                    let endIdx2 = findBalancedTokens(tokens, '[', nextJ);
+                                    let endIdx2 = findBalancedTokens(tokens, '[', ']', nextJ);
                                     if (endIdx2 !== -1) {
                                         let body2 = tokens.slice(nextJ + 1, endIdx2).join("");
                                         let translatedBody2 = translateBlocks(body2, userProcs);
@@ -241,7 +241,7 @@
                 let lookBehind = i - 1; while (lookBehind >= 0 && tokens[lookBehind].trim() === "") lookBehind--;
                 if (lookBehind >= 0 && (tokens[lookBehind] === "function" || tokens[lookBehind] === "class")) { output += token; continue; }
                 let sub = transpileOneCommand(tokens, i, fullArityMap, userProcs);
-                output += sub.js + "; "; i = sub.nextIdx - 1;
+                output += sub.js + (addSemicolons ? "; " : ""); i = sub.nextIdx - 1;
             } else {
                 if (token.startsWith('"')) {
                     if (token.endsWith('"') && token.length > 1) {
@@ -265,7 +265,7 @@
         if (arity === undefined) {
             if (token === "(") {
                 let end = findBalancedTokens(tokens, '(', ')', i);
-                if (end !== -1) { let insideJS = translateBlocks(tokens.slice(i + 1, end).join(""), userProcs); resultJS = "(" + insideJS + ")"; currentIdx = end + 1; }
+                if (end !== -1) { let insideJS = translateBlocks(tokens.slice(i + 1, end).join(""), userProcs, false, false); resultJS = "(" + insideJS + ")"; currentIdx = end + 1; }
             } else if (token === "-" || token === "!" || token === "+") {
                 let sub = transpileOneCommand(tokens, i + 1, fullArityMap, userProcs);
                 resultJS = token + sub.js;
