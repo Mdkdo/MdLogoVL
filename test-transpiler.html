@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logo Transpiler Tests</title>
+    <script src="commands.js"></script>
+    <script src="transpiler.js"></script>
+    <style>
+        .pass { color: green; }
+        .fail { color: red; }
+        pre { background: #f0f0f0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Logo Transpiler Tests</h1>
+    <div id="results"></div>
+
+    <script>
+        const tests = [
+            {
+                name: "Basic movement",
+                code: "AV 100 TD 90",
+                expected: /AV\(100\);\s+TD\(90\);/
+            },
+            {
+                name: "Nested commands",
+                code: "AV SIN 90",
+                expected: /AV\(SIN\(90\)\);/
+            },
+            {
+                name: "Conditional with = to == conversion",
+                code: "SI :x = 5 [ AV 10 ]",
+                expected: /if \(x ==\s*5\) {/
+            },
+            {
+                name: "Infinite loop protection",
+                code: "REPETE 10 [ AV 10 ]",
+                expected: /_c\d+\+\+\s*>\s*\d+/
+            },
+            {
+                name: "Procedure with params",
+                code: "POUR CARRE :c REPETE 4 [ AV :c TD 90 ] FIN",
+                expected: /function CARRE\(c\) {/
+            },
+            {
+                name: "Negative numbers with commas",
+                code: "FPOS 10, -20",
+                expected: /FPOS\(10, -20\);/
+            },
+            {
+                name: "Power operator",
+                code: "AV 2^3",
+                expected: /AV\(2\^3\);/
+            }
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        tests.forEach(test => {
+            const js = window.translateLogoToJS(test.code);
+            const passed = test.expected.test(js);
+            const div = document.createElement('div');
+            div.className = passed ? 'pass' : 'fail';
+            div.innerHTML = `<h3>${test.name}: ${passed ? 'PASSED' : 'FAILED'}</h3>` +
+                           `<p>Code: <code>${test.code}</code></p>` +
+                           `<p>Expected regex: <code>${test.expected}</code></p>` +
+                           `<pre>${js}</pre>`;
+            resultsDiv.appendChild(div);
+        });
+    </script>
+</body>
+</html>

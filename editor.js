@@ -1,327 +1,4 @@
 (function(global) {
-    let _logoLoopCounter = 0;
-
-    const zeroArgCmds = ["PU", "PD", "CS", "LC", "BC", "VE", "NETTOIE", "ORIGINE", "CT", "MT", "TAMPON", "REMPLIS", "POSX", "POSY", "CAP", "PI"];
-    const oneArgCmds = ["AV", "RE", "TD", "TG", "FTC", "FCC", "FCB", "FCAP", "FCA", "CERCLE", "OPACITE", "FLUIDE", "JOUE", "ECRIS", "ENTIER", "ARRONDI", "PLAFOND", "VALABS", "RACINE", "EXP", "LOGN", "HASARD", "SIN", "COS", "TAN", "ATAN"];
-    const twoArgCmds = ["FPOS", "POLYGONE", "RECTANGLE", "ELLIPSE", "DISTANCE", "NCE", "TOWARDS", "DS", "MODULO", "ARC"];
-    const threeArgCmds = ["ETOILE", "RVB"];
-
-    const arityMap = {};
-    zeroArgCmds.forEach(c => arityMap[c] = 0);
-    oneArgCmds.forEach(c => arityMap[c] = 1);
-    twoArgCmds.forEach(c => arityMap[c] = 2);
-    threeArgCmds.forEach(c => arityMap[c] = 3);
-    Object.assign(arityMap, {
-        "pu":0, "pd":0, "cs":0, "clean":0, "home":0, "ht":0, "st":0, "stamp":0, "posx":0, "posy":0, "heading":0, "pi":0,
-        "fd":1, "bk":1, "rt":1, "lt":1, "setwidth":1, "setcolor":1, "fillcolor":1, "setheading":1, "canvascolor":1, "circle":1, "opacity":1, "smooth":1, "playsound":1, "write":1, "integer":1, "round":1, "ceil":1, "abs":1, "sqrt":1, "exp":1, "ln":1, "random":1, "sin":1, "cos":1, "tan":1,
-        "setxy":2, "polygon":2, "rectangle":2, "ellipse":2, "distance":2, "towards":2, "mod":2, "arc":2,
-        "star":3, "rgb":3
-    });
-
-    function getFullArityMap(userProcs) {
-        const fullMap = Object.assign({}, arityMap);
-        for (let name in userProcs) { fullMap[name.toUpperCase()] = userProcs[name]; }
-        return fullMap;
-    }
-
-    global.translateLogoToJS = function(code) {
-        _logoLoopCounter = 0;
-        const userProcs = {};
-        let codeClean = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
-        const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)([^\n]*)/gi;
-        let m;
-        while ((m = procRegex.exec(codeClean)) !== null) {
-            const name = m[1];
-            const params = m[2].trim().split(/\s+/).filter(p => {
-                if (p.startsWith(':')) return true;
-                if (p === "") return false;
-                const u = p.toUpperCase();
-                return !global.LOGO_KEYWORDS.includes(u) && !global.LOGO_COMMANDS.includes(u);
-            });
-            userProcs[name.toUpperCase()] = params.length;
-        }
-        let js = translateBlocks(code, userProcs);
-        js = js.replace(/:([a-zA-Z0-9_$À-ÿ]+)/g, '$1');
-        return js;
-    };
-
-    function tokenize(input) {
-        // Updated regex to support quoted strings "..." and multi-char operators
-        return input.split(/(\s+|"(?:[^"\\]|\\.)*"|[\[\]{}();,]|\+\+|--|\+=|-=|\*=|\/=|==|=|\+|-|\*|\/|%|>|<|!|\^)/).filter(t => t.length > 0);
-    }
-
-    function translateBlocks(input, userProcs = {}, isClass = false, addSemicolons = true) {
-        const fullArityMap = getFullArityMap(userProcs);
-        let tokens = tokenize(input);
-        let output = "";
-        for (let i = 0; i < tokens.length; i++) {
-            let token = tokens[i];
-            let trimmed = token.trim();
-            if (!trimmed) { output += token; continue; }
-            if (trimmed === ",") continue;
-            let upper = trimmed.toUpperCase();
-
-            if (upper === 'POUR') {
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                let name = tokens[j] || ""; j++;
-                let params = [];
-                while (j < tokens.length) {
-                    if (tokens[j].trim() === "") { if (tokens[j].includes('\n')) break; j++; continue; }
-                    let t = tokens[j].trim();
-                    if (t.startsWith(':')) { params.push(t.substring(1)); j++; continue; }
-                    let u = t.toUpperCase();
-                    if (t !== "" && !global.LOGO_KEYWORDS.includes(u) && !global.LOGO_COMMANDS.includes(u)) {
-                        params.push(t); j++; continue;
-                    }
-                    break;
-                }
-                let endIdx = -1; let depth = 0;
-                for (let k = j; k < tokens.length; k++) {
-                    let tu = tokens[k].toUpperCase().trim();
-                    if (tu === 'POUR') depth++;
-                    if (tu === 'FIN') { if (depth === 0) { endIdx = k; break; } depth--; }
-                }
-                if (endIdx !== -1) {
-                    let bodyTokens = tokens.slice(j, endIdx);
-                    let body = translateBlocks(bodyTokens.join(""), userProcs);
-                    output += `function ${name}(${params.join(', ')}) { ${body} }`;
-                    i = endIdx; continue;
-                }
-            }
-            if (upper === 'REPETE' || upper === 'REPEAT') {
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                let nRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
-                j = nRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (tokens[j] === '[') {
-                    let endIdx = findBalancedTokens(tokens, '[', ']', j);
-                    if (endIdx !== -1) {
-                        let body = tokens.slice(j + 1, endIdx).join("");
-                        let translatedBody = translateBlocks(body, userProcs);
-                        const loopVar = `_i${_logoLoopCounter++}`;
-                        output += `for(let ${loopVar}=0; ${loopVar}<${nRes.js}; ${loopVar}++){ ${translatedBody} }`;
-                        i = endIdx; continue;
-                    }
-                }
-            }
-            if (upper === 'SI' || upper === 'IF' || upper === 'TANTQUE' || upper === 'WHILE') {
-                const isSi = (upper === 'SI' || upper === 'IF');
-                let j = i + 1; let condRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
-                j = condRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (tokens[j] === '[') {
-                    let endIdx1 = findBalancedTokens(tokens, '[', ']', j);
-                    if (endIdx1 !== -1) {
-                        let body1 = tokens.slice(j + 1, endIdx1).join("");
-                        let translatedBody1 = translateBlocks(body1, userProcs);
-                        if (isSi) {
-                            let nextJ = endIdx1 + 1; while (nextJ < tokens.length && tokens[nextJ].trim() === "") nextJ++;
-                            if (tokens[nextJ] && (tokens[nextJ].toUpperCase() === 'SINON' || tokens[nextJ].toUpperCase() === 'ELSE')) {
-                                nextJ++; while (nextJ < tokens.length && tokens[nextJ].trim() === "") nextJ++;
-                                if (tokens[nextJ] === '[') {
-                                    let endIdx2 = findBalancedTokens(tokens, '[', ']', nextJ);
-                                    if (endIdx2 !== -1) {
-                                        let body2 = tokens.slice(nextJ + 1, endIdx2).join("");
-                                        let translatedBody2 = translateBlocks(body2, userProcs);
-                                        output += `if (${condRes.js}) { ${translatedBody1} } else { ${translatedBody2} }`;
-                                        i = endIdx2; continue;
-                                    }
-                                }
-                            }
-                            output += `if (${condRes.js}) { ${translatedBody1} }`;
-                            i = endIdx1; continue;
-                        } else {
-                            output += `while (${condRes.js}) { ${translatedBody1} }`;
-                            i = endIdx1; continue;
-                        }
-                    }
-                }
-            }
-            if (upper === 'CHOISIS' || upper === 'SWITCH') {
-                let j = i + 1; let valRes = transpileOneCommand(tokens, i + 1, fullArityMap, userProcs);
-                j = valRes.nextIdx; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (tokens[j] === '[') {
-                    let endIdx = findBalancedTokens(tokens, '[', ']', j);
-                    if (endIdx !== -1) {
-                        let body = tokens.slice(j + 1, endIdx).join("");
-                        let translatedBody = body;
-                        while (true) {
-                            let cMatch = /\b(?:case|CASE)\s+([^\[\]\n]+)\[/gi.exec(translatedBody); if (!cMatch) break;
-                            let moffset = cMatch.index;
-                            let eIdx = findBalancedString(translatedBody, '[', ']', moffset + cMatch[0].length - 1);
-                            if (eIdx !== -1) {
-                                let cbody = translatedBody.substring(moffset + cMatch[0].length, eIdx);
-                                translatedBody = translatedBody.substring(0, moffset) + `case ${cMatch[1].trim()}: ${translateBlocks(cbody, userProcs)}; break; ` + translatedBody.substring(eIdx + 1);
-                            } else break;
-                        }
-                        while (true) {
-                            let aMatch = /\b(?:autres|AUTRES|default|DEFAULT)\s*\[/gi.exec(translatedBody); if (!aMatch) break;
-                            let moffset = aMatch.index;
-                            let eIdx = findBalancedString(translatedBody, '[', ']', moffset + aMatch[0].length - 1);
-                            if (eIdx !== -1) {
-                                let cbody = translatedBody.substring(moffset + aMatch[0].length, eIdx);
-                                translatedBody = translatedBody.substring(0, moffset) + `default: ${translateBlocks(cbody, userProcs)}; break; ` + translatedBody.substring(eIdx + 1);
-                            } else break;
-                        }
-                        output += `switch (${valRes.js}) { ${translatedBody} }`;
-                        i = endIdx; continue;
-                    }
-                }
-            }
-            if (upper === 'CLASSE' || upper === 'CLASS') {
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                let name = tokens[j] || ""; j++;
-                while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (tokens[j] === '[') {
-                    let endIdx = findBalancedTokens(tokens, '[', ']', j);
-                    if (endIdx !== -1) {
-                        let body = tokens.slice(j + 1, endIdx).join("");
-                        let translatedBody = translateBlocks(body, userProcs, true);
-                        output += `class ${name} { ${translatedBody} }`;
-                        i = endIdx; continue;
-                    }
-                }
-            }
-            if (upper === 'DONNE' || upper === 'DECLARE' || upper === 'LET' || upper === 'VAR') {
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (j < tokens.length && tokens[j].startsWith(':')) {
-                    let varNameRaw = tokens[j].substring(1);
-                    let varName = varNameRaw.replace(/:/g, ''); j++;
-                    while (j < tokens.length && tokens[j].trim() === "") j++;
-                    if (j < tokens.length && ["=", "+=", "-=", "*=", "/="].includes(tokens[j])) {
-                        let op = tokens[j];
-                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap, userProcs);
-                        if (varName.includes('.') || varName.startsWith('this')) output += `${varName} ${op} ${valRes.js}; `;
-                        else output += `var ${varName} ${op} ${valRes.js}; `;
-                        i = valRes.nextIdx - 1;
-                    } else {
-                        let valRes = transpileOneCommand(tokens, j, fullArityMap, userProcs);
-                        if (varName.includes('.') || varName.startsWith('this')) output += `${varName} = ${valRes.js}; `;
-                        else output += `var ${varName} = ${valRes.js}; `;
-                        i = valRes.nextIdx - 1;
-                    }
-                }
-                continue;
-            }
-
-            // New logic: catch :var = , :var +=, :var++, etc. without DONNE
-            if (token.startsWith(':')) {
-                let varName = token.substring(1);
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (j < tokens.length && ["=", "+=", "-=", "*=", "/=", "++", "--"].includes(tokens[j])) {
-                    let op = tokens[j];
-                    if (op === "++" || op === "--") {
-                        output += `${varName}${op}; `;
-                        i = j;
-                    } else {
-                        let valRes = transpileOneCommand(tokens, j + 1, fullArityMap, userProcs);
-                        output += `${varName} ${op} ${valRes.js}; `;
-                        i = valRes.nextIdx - 1;
-                    }
-                    continue;
-                }
-            }
-
-            if (isClass && trimmed !== "") {
-                let j = i + 1; while (j < tokens.length && tokens[j].trim() === "") j++;
-                if (j < tokens.length && tokens[j] === "[") {
-                    let methodName = (trimmed.toLowerCase() === "constructeur" || trimmed.toLowerCase() === "constructor") ? "constructor" : trimmed;
-                    let endIdx = findBalancedTokens(tokens, '[', ']', j);
-                    if (endIdx !== -1) {
-                        let body = tokens.slice(j + 1, endIdx).join("");
-                        let translatedBody = translateBlocks(body, userProcs);
-                        output += `${methodName}() { ${translatedBody} } `;
-                        i = endIdx; continue;
-                    }
-                }
-            }
-
-            if (upper === 'RENDS' || upper === 'RETURN') { output += "return "; continue; }
-            if (upper === 'STOP' || upper === 'BREAK') { output += "break; "; continue; }
-            if (upper === 'CONTINUE') { output += "continue; "; continue; }
-            if (fullArityMap[upper] !== undefined) {
-                let lookBehind = i - 1; while (lookBehind >= 0 && tokens[lookBehind].trim() === "") lookBehind--;
-                if (lookBehind >= 0 && (tokens[lookBehind] === "function" || tokens[lookBehind] === "class")) { output += token; continue; }
-                let sub = transpileOneCommand(tokens, i, fullArityMap, userProcs);
-                output += sub.js + (addSemicolons ? "; " : ""); i = sub.nextIdx - 1;
-            } else {
-                if (token.startsWith('"')) {
-                    if (token.endsWith('"') && token.length > 1) {
-                         output += token; // Full quoted string
-                    } else {
-                         output += JSON.stringify(token.substring(1)); // Old Logo "string
-                    }
-                }
-                else output += token;
-            }
-        }
-        return output;
-    }
-
-    function transpileOneCommand(tokens, startIndex, fullArityMap, userProcs) {
-        let i = startIndex;
-        while (i < tokens.length && (tokens[i].trim() === "" || tokens[i] === ",")) i++;
-        if (i >= tokens.length) return { js: "", nextIdx: i };
-        let token = tokens[i].trim(); let upper = token.toUpperCase(); let arity = fullArityMap[upper];
-        let resultJS = ""; let currentIdx = i;
-        if (arity === undefined) {
-            if (token === "(") {
-                let end = findBalancedTokens(tokens, '(', ')', i);
-                if (end !== -1) { let insideJS = translateBlocks(tokens.slice(i + 1, end).join(""), userProcs, false, false); resultJS = "(" + insideJS + ")"; currentIdx = end + 1; }
-            } else if (token === "-" || token === "!" || token === "+") {
-                let sub = transpileOneCommand(tokens, i + 1, fullArityMap, userProcs);
-                resultJS = token + sub.js;
-                currentIdx = sub.nextIdx;
-            } else if (token === "[") {
-                let end = findBalancedTokens(tokens, '[', ']', i);
-                if (end !== -1) { let inside = tokens.slice(i + 1, end).join("").trim(); resultJS = JSON.stringify(inside); currentIdx = end + 1; }
-            } else if (token.startsWith(':')) { resultJS = token.substring(1); currentIdx = i + 1; }
-            else if (token.startsWith('"')) {
-                if (token.endsWith('"') && token.length > 1) {
-                    resultJS = token; // Full quoted string
-                } else {
-                    resultJS = JSON.stringify(token.substring(1));
-                }
-                currentIdx = i + 1;
-            }
-            else { resultJS = token; currentIdx = i + 1; }
-        } else {
-            let args = []; currentIdx = i + 1;
-            for (let a = 0; a < arity; a++) { let sub = transpileOneCommand(tokens, currentIdx, fullArityMap, userProcs); args.push(sub.js); currentIdx = sub.nextIdx; }
-            resultJS = token + "(" + args.join(", ") + ")";
-        }
-        while (currentIdx < tokens.length) {
-            let nextTok = tokens[currentIdx]; let nt = nextTok.trim();
-            if (nt === "") {
-                let peek = currentIdx + 1; while (peek < tokens.length && tokens[peek].trim() === "") peek++;
-                if (peek < tokens.length && "+-*/%><=!^".split("").some(op => tokens[peek].trim().includes(op))) { resultJS += nextTok; currentIdx++; continue; }
-                break;
-            }
-            if ("+-*/%><=!^".split("").some(op => nt.includes(op))) {
-                resultJS += nt; currentIdx++;
-                let sub = transpileOneCommand(tokens, currentIdx, fullArityMap, userProcs); resultJS += sub.js; currentIdx = sub.nextIdx; continue;
-            }
-            break;
-        }
-        return { js: resultJS, nextIdx: currentIdx };
-    }
-
-    function findBalancedTokens(tokens, start, end, startIndex) {
-        let count = 0;
-        for (let i = startIndex; i < tokens.length; i++) {
-            if (tokens[i] === start) count++;
-            else if (tokens[i] === end) { count--; if (count === 0) return i; }
-        }
-        return -1;
-    }
-
-    function findBalancedString(str, start, end, startIndex) {
-        let count = 0;
-        for (let i = startIndex; i < str.length; i++) {
-            if (str[i] === start) count++;
-            else if (str[i] === end) { count--; if (count === 0) return i; }
-        }
-        return -1;
-    }
-
     global.updateLineNumbers = function() {
         const el = document.getElementById('codeEditor');
         const ln = document.getElementById('line-numbers');
@@ -336,7 +13,7 @@
         let code = el.value;
         const keywords = global.LOGO_KEYWORDS || [];
         const commands = global.LOGO_COMMANDS || [];
-        const combinedRegex = new RegExp('(\\/\/.*|\\/\\*[\\s\\S]*?\\*\\/)|' + '("(?:[^"\\\\\\n]|\\.)*"|\'(?:[^\'\\\\\\n]|\\.)*\'|`(?:[^\\\\`]|\\.)*`)|' + '(\\b\\d+(?:\\.\\d+)?\\b)|' + '(:[a-zA-Z0-9_$À-ÿ]+)|' + '([^a-zA-Z0-9_À-ÿ]|^)(' + keywords.join('|') + ')(?![a-zA-Z0-9_À-ÿ])|' + '([^a-zA-Z0-9_À-ÿ]|^)(' + commands.join('|') + ')(?![a-zA-Z0-9_À-ÿ])|' + '([\\+\\-\\*/\\(\\),\\;\\(\\)\\[\\]\\{\\}\\.])|' + '([a-zA-Z_$À-ÿ][a-zA-Z0-9_$À-ÿ]*)', 'gi');
+        const combinedRegex = new RegExp('(\\/\/.*|\\/\\*[\\s\\S]*?\\*\\/)|' + '("(?:[^"\\\\\\n]|\\.)*"|\'(?:[^\'\\\\\\n]|\\.)*\'|`(?:[^\\\\`]|\\.)*`)|' + '(\\b\\d+(?:\\.\\d+)?\\b)|' + '(:[a-zA-Z0-9_$\u00C0-\u00FF]+)|' + '([^a-zA-Z0-9_\u00C0-\u00FF]|^)(' + keywords.join('|') + ')(?![a-zA-Z0-9_\u00C0-\u00FF])|' + '([^a-zA-Z0-9_\u00C0-\u00FF]|^)(' + commands.join('|') + ')(?![a-zA-Z0-9_\u00C0-\u00FF])|' + '([\\+\\-\\*/\\(\\),\\;\\(\\)\\[\\]\\{\\}\\.])|' + '([a-zA-Z_$\u00C0-\u00FF][a-zA-Z0-9_$\u00C0-\u00FF]*)', 'gi');
         let res = ''; let last = 0;
         code.replace(combinedRegex, (match, com, str, num, v, kp, kw, cp, cmd, op, unk, off) => {
             res += code.substring(last, off).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -349,8 +26,8 @@
             else if (op) res += `<span class="hl-operator">${op.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
             else if (unk) {
                 const procSearch = code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
-                const ups = []; const pr = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)/gi; let m;
-                while ((m = pr.exec(procSearch)) !== null) ups.push(m[1].toUpperCase());
+                const ups = []; const prRegex = /\bpour\s+([a-zA-Z0-9_$\u00C0-\u00FF]+)/gi; let m;
+                while ((m = prRegex.exec(procSearch)) !== null) ups.push(m[1].toUpperCase());
                 if (ups.includes(unk.toUpperCase())) res += `<span class="hl-userproc">${unk}</span>`;
                 else res += `<span class="hl-unknown">${unk}</span>`;
             }
@@ -364,54 +41,6 @@
         const hl = document.getElementById('highlighting');
         const ln = document.getElementById('line-numbers');
         if (el && hl) { hl.scrollTop = el.scrollTop; hl.scrollLeft = el.scrollLeft; if (ln) ln.scrollTop = el.scrollTop; }
-    };
-
-    global.logToTerminal = function(msg, type = 'log') {
-        const terminal = document.getElementById('terminalOutput'); if (!terminal) return;
-        const div = document.createElement('div'); div.className = `terminal-msg terminal-${type}`; div.textContent = msg;
-        terminal.appendChild(div); terminal.scrollTop = terminal.scrollHeight;
-    };
-
-    global.getHelpers = function() {
-        const helpers = {};
-        const keys = global.LOGO_ALL_CAPS || [];
-        keys.forEach(k => { if (global[k] !== undefined) helpers[k] = global[k]; });
-        ["fd", "bk", "rt", "lt", "pu", "pd", "cs", "clean", "home", "setcolor", "setwidth", "ps", "arc", "circle", "rectangle", "ellipse", "line", "write", "font", "polygon", "star", "stamp", "drawimage", "gradient", "opacity", "smooth", "setxy", "setheading", "ht", "st", "posx", "posy", "heading", "distance", "towards", "ds", "pencolor", "pc", "fillcolor", "fill", "canvascolor", "pi", "sqrt", "pow", "abs", "exp", "ln", "integer", "round", "ceil", "min", "max", "sin", "cos", "tan", "atan", "random", "mod", "rgb", "playsound", "showimage", "showvideo"].forEach(k => { if (global[k] !== undefined) helpers[k] = global[k]; });
-        helpers.console = { log: (...args) => global.logToTerminal(args.join(' '), 'log'), error: (...args) => global.logToTerminal(args.join(' '), 'error'), warn: (...args) => global.logToTerminal(args.join(' '), 'warn'), clear: () => { document.getElementById('terminalOutput').innerHTML = ''; } };
-        return helpers;
-    };
-
-    global.runCode = function() {
-        const terminal = document.getElementById('terminalOutput'); if (terminal) terminal.innerHTML = '';
-        const code = document.getElementById('codeEditor').value;
-        if (global.turtle) global.turtle.reset();
-        global.executeSnippet(code);
-    };
-
-    global.executeSnippet = function(code) {
-        let preparedCode = global.translateLogoToJS(code);
-        preparedCode = preparedCode.replace(/\^/g, '**');
-        try {
-            const helpers = global.getHelpers();
-            const keys = Object.keys(helpers);
-            const values = Object.values(helpers);
-            const execute = new Function(...keys, '"use strict";\n' + preparedCode);
-            execute(...values);
-        } catch (err) {
-            let lineNo = "Inconnue";
-            if (err.stack) {
-                const sl = err.stack.split('\n');
-                for (let s of sl) {
-                    const m = s.match(/<anonymous>:(\d+):(\d+)/) || s.match(/eval at.*<anonymous>:(\d+):(\d+)/) || s.match(/eval:(\d+):(\d+)/);
-                    if (m) { lineNo = parseInt(m[m.length - 2]) - 2; if (lineNo < 0) lineNo = "Inconnue"; break; }
-                }
-            }
-            const logoLines = code.split('\n');
-            let errorMsg = `Erreur: ${err.message}\n`;
-            if (lineNo !== "Inconnue" && logoLines[lineNo - 1] !== undefined) errorMsg += `Ligne ${lineNo}: ${logoLines[lineNo - 1].trim()}`;
-            else errorMsg += `Ligne: ${lineNo}`;
-            global.logToTerminal(errorMsg, 'error');
-        }
     };
 })(window);
 
@@ -493,15 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const separators = [' ', '\n', '\t', '[', ']', '(', ')', '{', '}', ',', ';'];
         if (separators.includes(lastChar)) {
             const textBefore = text.substring(0, pos - 1);
-            const wordMatch = textBefore.match(/([a-zA-Z0-9_$À-ÿ]+)$/);
+            const wordMatch = textBefore.match(/([a-zA-Z0-9_$\u00C0-\u00FF]+)$/);
             if (wordMatch) {
                 const word = wordMatch[1];
                 const upperWord = word.toUpperCase();
                 const allCaps = window.LOGO_ALL_CAPS || [];
                 const procSearch = text.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^\\`]|\\.)*`|\/\/.*|\/\*[\s\S]*?\*\/)/g, "");
-                const procRegex = /\bpour\s+([a-zA-Z0-9_$À-ÿ]+)/gi;
-                const userProcs = []; let m;
-                while ((m = procRegex.exec(procSearch)) !== null) { userProcs.push(m[1].toUpperCase()); }
+                const procRegex = /\bpour\s+([a-zA-Z0-9_$\u00C0-\u00FF]+)/gi;
+                const userProcs = []; let mProc;
+                while ((mProc = procRegex.exec(procSearch)) !== null) { userProcs.push(mProc[1].toUpperCase()); }
                 if (allCaps.includes(upperWord) || userProcs.includes(upperWord)) {
                     const start = pos - 1 - word.length;
                     const newText = text.substring(0, start) + upperWord + text.substring(pos - 1);
