@@ -19,6 +19,8 @@
     --hl-comment: #808080;
     --hl-operator: #cc0000;
     --hl-unknown: #00bfff;
+    --hl-userproc: #9933ff;
+    --hl-variable: #e67e22;
 }
 
 .theme-dark {
@@ -36,6 +38,8 @@
     --hl-comment: #757575;
     --hl-operator: #ffffff;
     --hl-unknown: #b0bec5;
+    --hl-userproc: #d19a66;
+    --hl-variable: #ff9800;
 }
 
 .theme-monokai {
@@ -53,6 +57,8 @@
     --hl-comment: #75715e;
     --hl-operator: #f8f8f2;
     --hl-unknown: #a6e22e;
+    --hl-userproc: #e6db74;
+    --hl-variable: #fd971f;
 }
 
 .theme-solarized {
@@ -70,6 +76,8 @@
     --hl-comment: #93a1a1;
     --hl-operator: #586e75;
     --hl-unknown: #cb4b16;
+    --hl-userproc: #b58900;
+    --hl-variable: #cb4b16;
 }
 
 .theme-midnight {
@@ -87,6 +95,8 @@
     --hl-comment: #506680;
     --hl-operator: #ffffff;
     --hl-unknown: #bf94ff;
+    --hl-userproc: #ff8000;
+    --hl-variable: #ffcc00;
 }
 
 * { box-sizing: border-box; }
@@ -117,19 +127,35 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahom
 .toolbar button:hover { background: rgba(0,0,0,0.1); }
 .separator { width: 1px; background: var(--border-color); margin: 5px 10px; }
 
-#editor-container { flex: 1; position: relative; overflow: hidden; background: var(--editor-bg); }
+#editor-container { flex: 1; position: relative; overflow: hidden; background: var(--editor-bg); display: flex; }
+
+#line-numbers {
+    width: 40px;
+    padding: 20px 5px;
+    text-align: right;
+    font-family: 'Fira Code', 'Courier New', Courier, monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #888;
+    background: var(--toolbar-bg);
+    border-right: 1px solid var(--border-color);
+    user-select: none;
+    overflow: hidden;
+}
+
 #codeEditor, #highlighting { 
     margin: 0; 
-    padding: 20px; 
+    padding: 20px;
+    padding-left: 10px;
     border: none; 
-    width: 100%; 
+    width: calc(100% - 40px);
     height: 100%; 
     font-family: 'Fira Code', 'Courier New', Courier, monospace; 
     font-size: 16px; 
     line-height: 1.5; 
     position: absolute; 
     top: 0; 
-    left: 0; 
+    left: 40px;
     white-space: pre; 
     word-wrap: normal; 
     overflow: auto; 
@@ -239,10 +265,12 @@ button.danger { background: var(--danger-color); color: white; border: none; hei
 .setting-item select, .setting-item input { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
 
 /* Syntax Colors */
-.hl-keyword { color: var(--hl-keyword); font-weight: bold; }
-.hl-command { color: var(--hl-command); }
+.hl-keyword { color: var(--hl-keyword); font-weight: bold; text-decoration: none; }
+.hl-command { color: var(--hl-command); font-weight: bold; text-decoration: none; }
 .hl-string { color: var(--hl-string); }
 .hl-number { color: var(--hl-number); }
 .hl-comment { color: var(--hl-comment); font-style: italic; }
 .hl-operator { color: var(--hl-operator); }
 .hl-unknown { color: var(--hl-unknown); }
+.hl-userproc { color: var(--hl-userproc); font-weight: bold; }
+.hl-variable { color: var(--hl-variable); font-weight: bold; }

@@ -1,139 +1,108 @@
-// Global turtle instance (will be initialized in editorUI.js)
-var turtle;
+(function(global) {
+    global.turtle = null;
+    const colorMap = { 'rouge': 'red', 'vert': 'green', 'bleu': 'blue', 'jaune': 'yellow', 'noir': 'black', 'blanc': 'white', 'rose': 'pink', 'orange': 'orange', 'violet': 'purple', 'gris': 'gray', 'marron': 'brown', 'cyan': 'cyan', 'magenta': 'magenta' };
+    const translateColor = (c) => (typeof c === 'string') ? (colorMap[c.toLowerCase()] || c) : c;
 
-// Helper functions for the user code
-var fd = (n) => turtle.fd(n);
-var bk = (n) => turtle.bk(n);
-var rt = (n) => turtle.rt(n);
-var lt = (n) => turtle.lt(n);
-var pu = () => turtle.pu();
-var pd = () => turtle.pd();
-var cs = () => turtle.cs();
-var clean = () => turtle.clean();
-var home = () => turtle.home();
-
-var colorMap = {
-    'rouge': 'red', 'vert': 'green', 'bleu': 'blue', 'jaune': 'yellow',
-    'noir': 'black', 'blanc': 'white', 'rose': 'pink', 'orange': 'orange',
-    'violet': 'purple', 'gris': 'gray', 'marron': 'brown', 'cyan': 'cyan',
-    'magenta': 'magenta'
-};
-var translateColor = (c) => (typeof c === 'string') ? (colorMap[c.toLowerCase()] || c) : c;
-
-var setcolor = (c) => turtle.setcolor(translateColor(c));
-var setwidth = (w) => turtle.setwidth(w);
-var ps = setwidth;
-
-var arc = (a, r) => turtle.arc(a, r);
-var circle = (r) => turtle.circle(r);
-var e = circle;
-var rectangle = (w, h) => turtle.rectangle(w, h);
-var ellipse = (w, h) => turtle.ellipse(w, h);
-var line = (x1, y1, x2, y2) => turtle.line(x1, y1, x2, y2);
-var write = (t) => turtle.write(t);
-var font = (s) => turtle.font(s);
-
-var polygon = (sides, size) => turtle.polygon(sides, size);
-var star = (points, outer, inner) => turtle.star(points, outer, inner);
-var stamp = () => turtle.stamp();
-var drawimage = (url, w, h) => turtle.drawImage(url, w, h);
-var gradient = (type, ...colors) => turtle.gradient(type, colors);
-var opacity = (val) => turtle.opacity(val);
-var smooth = (val) => turtle.smooth(val);
-
-var setxy = (x, y) => turtle.setxy(x, y);
-var setheading = (d) => turtle.setheading(d);
-var ht = () => turtle.ht();
-var st = () => turtle.st();
-var posx = () => turtle.posx();
-var posy = () => turtle.posy();
-var heading = () => turtle.heading();
-var ng = heading;
-var distance = (x, y) => turtle.distance(x, y);
-var nce = distance;
-var towards = (x, y) => turtle.towards(x, y);
-var ds = towards;
-
-var pencolor = (c) => turtle.pencolor(translateColor(c));
-var pc = pencolor;
-var fillcolor = (c) => turtle.fillcolor(translateColor(c));
-var fill = (c) => turtle.fill(c);
-var canvascolor = (c) => turtle.canvascolor(translateColor(c));
-
-var repeat = (n, fn) => {
-    for (let i = 0; i < n; i++) {
-        fn(i);
-    }
-};
-
-// French Aliases
-var av = fd;
-var re = bk;
-var td = rt;
-var tg = lt;
-var lc = pu;
-var bc = pd;
-var ve = cs;
-var ct = ht;
-var mt = st;
-var fcc = setcolor;
-var fcl = fillcolor;
-var fcap = setheading;
-var fpos = setxy;
-var fct = canvascolor;
-var répète = repeat;
-var écris = write;
-var tampon = stamp;
-var dégradé = gradient;
-var opacité = opacity;
-var fluide = smooth;
-var joue = playsound;
-var afficheImage = showimage;
-var afficheVideo = showvideo;
-var cercle = circle;
-var polygone = polygon;
-var étoile = star;
-
-// Media functions
-var playsound = (url) => {
-    const audio = new Audio(url);
-    audio.play();
-};
-
-var showimage = (url, x, y, w, h) => {
-    const img = new Image();
-    img.onload = () => {
-        const ix = (x !== undefined) ? x : turtle.x;
-        const iy = (y !== undefined) ? y : turtle.y;
-        const sx = turtle.originX + ix;
-        const sy = turtle.originY - iy;
-        if (w !== undefined && h !== undefined) {
-            turtle.ctx.drawImage(img, sx - w/2, sy - h/2, w, h);
-        } else {
-            turtle.ctx.drawImage(img, sx - img.width/2, sy - img.height/2);
+    const baseLibrary = {
+        fd: (n) => global.turtle.fd(n),
+        bk: (n) => global.turtle.bk(n),
+        rt: (n) => global.turtle.rt(n),
+        lt: (n) => global.turtle.lt(n),
+        pu: () => global.turtle.pu(),
+        pd: () => global.turtle.pd(),
+        cs: () => global.turtle.cs(),
+        clean: () => global.turtle.clean(),
+        home: () => global.turtle.home(),
+        setcolor: (c) => global.turtle.setcolor(translateColor(c)),
+        setwidth: (w) => global.turtle.setwidth(w),
+        arc: (a, r) => global.turtle.arc(a, r),
+        circle: (r) => global.turtle.circle(r),
+        rectangle: (w, h) => global.turtle.rectangle(w, h),
+        ellipse: (w, h) => global.turtle.ellipse(w, h),
+        line: (x1, y1, x2, y2) => global.turtle.line(x1, y1, x2, y2),
+        write: (t) => global.turtle.write(t),
+        font: (s) => global.turtle.font(s),
+        polygon: (sides, size) => global.turtle.polygon(sides, size),
+        star: (points, outer, inner) => global.turtle.star(points, outer, inner),
+        stamp: () => global.turtle.stamp(),
+        gradient: (type, ...colors) => global.turtle.gradient(type, colors),
+        opacity: (val) => global.turtle.opacity(val),
+        smooth: (val) => global.turtle.smooth(val),
+        setxy: (x, y) => global.turtle.setxy(x, y),
+        setheading: (d) => global.turtle.setheading(d),
+        ht: () => global.turtle.ht(),
+        st: () => global.turtle.st(),
+        posx: () => global.turtle.x,
+        posy: () => global.turtle.y,
+        heading: () => global.turtle.heading(),
+        distance: (x, y) => global.turtle.distance(x, y),
+        towards: (x, y) => global.turtle.towards(x, y),
+        pencolor: (c) => global.turtle.pencolor(translateColor(c)),
+        fillcolor: (c) => global.turtle.fillcolor(translateColor(c)),
+        fill: () => global.turtle.fill(),
+        canvascolor: (c) => global.turtle.canvascolor(translateColor(c)),
+        pi: Math.PI,
+        sqrt: Math.sqrt,
+        pow: Math.pow,
+        abs: Math.abs,
+        exp: Math.exp,
+        ln: Math.log,
+        integer: Math.floor,
+        round: Math.round,
+        ceil: Math.ceil,
+        min: Math.min,
+        max: Math.max,
+        random: (n) => Math.random() * n,
+        mod: (a, b) => a % b,
+        rgb: (r, g, b) => `rgb(${r},${g},${b})`,
+        playsound: (url) => { const audio = new Audio(url); audio.play(); },
+        print: (msg) => { if (typeof global.logToTerminal === 'function') { global.logToTerminal(String(msg), 'log'); } else { console.log(msg); } },
+        showimage: (url, x, y, w, h) => {
+            const img = new Image();
+            img.onload = () => {
+                const ix = (x !== undefined) ? x : global.turtle.x;
+                const iy = (y !== undefined) ? y : global.turtle.y;
+                const sx = global.turtle.originX + ix;
+                const sy = global.turtle.originY - iy;
+                if (w !== undefined && h !== undefined) { global.turtle.ctx.drawImage(img, sx - w/2, sy - h/2, w, h); }
+                else { global.turtle.ctx.drawImage(img, sx - img.width/2, sy - img.height/2); }
+            };
+            img.src = url;
+        },
+        showvideo: (url, x, y, w, h) => {
+            const video = document.createElement('video'); video.src = url; video.autoplay = true; video.loop = true; video.muted = true;
+            video.onplay = () => {
+                const drawVideo = () => {
+                    if (video.paused || video.ended) return;
+                    const ix = (x !== undefined) ? x : global.turtle.x;
+                    const iy = (y !== undefined) ? y : global.turtle.y;
+                    const sx = global.turtle.originX + ix;
+                    const sy = global.turtle.originY - iy;
+                    const vw = w || 320; const vh = h || 240;
+                    global.turtle.ctx.drawImage(video, sx - vw/2, sy - vh/2, vw, vh);
+                    requestAnimationFrame(drawVideo);
+                };
+                drawVideo();
+            };
         }
     };
-    img.src = url;
-};
 
-var showvideo = (url, x, y, w, h) => {
-    const video = document.createElement('video');
-    video.src = url;
-    video.autoplay = true;
-    video.loop = true;
-    video.muted = true;
-    video.onplay = () => {
-        const drawVideo = () => {
-            if (video.paused || video.ended) return;
-            const ix = (x !== undefined) ? x : turtle.x;
-            const iy = (y !== undefined) ? y : turtle.y;
-            const sx = turtle.originX + ix;
-            const sy = turtle.originY - iy;
-            const vw = w || 320;
-            const vh = h || 240;
-            turtle.ctx.drawImage(video, sx - vw/2, sy - vh/2, vw, vh);
-            requestAnimationFrame(drawVideo);
-        };
-        drawVideo();
-    };
-};
+    const degToRad = (d) => (d * Math.PI) / 180;
+    const radToDeg = (r) => (r * 180) / Math.PI;
+    baseLibrary.sin = (d) => Math.sin(degToRad(d));
+    baseLibrary.cos = (d) => Math.cos(degToRad(d));
+    baseLibrary.tan = (d) => Math.tan(degToRad(d));
+    baseLibrary.atan = (y, x) => radToDeg(Math.atan2(y, x));
+
+    // Register globally and create aliases
+    Object.assign(global, baseLibrary);
+    if (global.LOGO_COMMANDS_DATA) {
+        global.LOGO_COMMANDS_DATA.forEach(cmd => {
+            if (baseLibrary[cmd.js]) {
+                global[cmd.fr] = baseLibrary[cmd.js];
+                global[cmd.en.toUpperCase()] = baseLibrary[cmd.js];
+            }
+        });
+    }
+
+})(window);
